@@ -97,6 +97,8 @@ Here's the preliminary list of roadmap items to be implemented:
 - [ ] Ability to specify the Terraform project templates for reuse
 - [ ] Ability to export the workflow to CodeBuild (Multiple kanvas jobs are mapped to a single build)
 - [ ] Ability to export the workflow to GitHub Actions (Each kanvas job is mapped to one Actions job)
+- [ ] An example project that covers kompose, EKS, and ArgoCD.
+  - We'll be using [vals](https://github.com/helmfile/vals) for embedding secret references in `docker-compose.yml`, [kompose](https://kompose.io/) for converting `docker-compose.yml` to Kubernetes manifests, apply or git-push the manifests somehow(perhaps we'll be creating a dedicated tool for that), and [terraform-argocd-provider](https://github.com/oboukili/terraform-provider-argocd) for managing ArgoCD projects, applications, cluster secrets, and so on.
 
 ## Related projects
 
