@@ -90,6 +90,14 @@ The above configuration implies that:
 - `kanvas plan` runs `terraform plan` and store the plan files up until the first unapplied terraform projects
 - `kanvas apply` runs `docker build` and `terraform apply` for all the terraform projects planned beforehand
 
+## Roadmap
+
+Here's the preliminary list of roadmap items to be implemented:
+
+- [ ] Ability to specify the Terraform project templates for reuse
+- [ ] Ability to export the workflow to CodeBuild (Multiple kanvas jobs are mapped to a single build)
+- [ ] Ability to export the workflow to GitHub Actions (Each kanvas job is mapped to one Actions job)
+
 ## Related projects
 
 `kanvas` is supposed to be a spritual successor to [Atlantis](https://github.com/runatlantis/atlantis). Like Atlantis, we needed something that is convenient to power mainly Terraform-based workflows. We also needed out-of-box support for more tools, wanted it be easier to operate and easier to test locally and easier to integrate into various environments.
