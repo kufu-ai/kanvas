@@ -102,7 +102,7 @@ Here's the preliminary list of roadmap items to be implemented:
 
 ## Related projects
 
-`kanvas` is supposed to be a spritual successor to [Atlantis](https://github.com/runatlantis/atlantis). Like Atlantis, we needed something that is convenient to power mainly Terraform-based workflows. We also needed out-of-box support for more tools, wanted it be easier to operate and easier to test locally and easier to integrate into various environments.
+`kanvas` is supposed to be a spritual successor to [Atlantis](https://github.com/runatlantis/atlantis). Like Atlantis, we needed something that is convenient to power mainly-Terraform-based workflows. We also needed out-of-box support for more tools, wanted it be easier to operate and easier to test locally and easier to integrate into various environments.
 
 ## References
 
