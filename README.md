@@ -4,7 +4,7 @@
 
 Tired of maintaining adhoc scripts or proprietary CI pipelines?
 
-It's sole goal is to make it the last time for you to write an adhoc script to deploy your application. You write a kanvas configuration file once, and use it for various use-cases listed below...
+`kanvas`'s sole goal is to never require you to write an adhoc script to deploy your application. You write a kanvas configuration file once, and use it for various use-cases listed below...
 
 ## Use-cases
 
