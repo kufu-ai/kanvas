@@ -1,39 +1,55 @@
 package kanvas
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+)
 
 type Workflow struct {
 	Entry        []string
 	WorkflowJobs map[string]*WorkflowJob
+	Dir          string
 }
 
 func newWorkflow(config Component) (*Workflow, error) {
-	wf := &Workflow{
-		WorkflowJobs: map[string]*WorkflowJob{},
+	dir, err := os.Getwd()
+	if err != nil {
+		return nil, err
 	}
 
-	if err := wf.load("", config); err != nil {
+	wf := &Workflow{
+		WorkflowJobs: map[string]*WorkflowJob{},
+		Dir:          dir,
+	}
+
+	if err := wf.load("", dir, config); err != nil {
 		return nil, err
 	}
 
 	return wf, nil
 }
 
-func (wf *Workflow) load(path string, config Component) error {
-	for name, p := range config.Components {
+func (wf *Workflow) load(path, baseDir string, config Component) error {
+	for name, c := range config.Components {
 		subPath := id(path, name)
 
 		var needs []string
-		for _, n := range p.Needs {
+		for _, n := range c.Needs {
 			needs = append(needs, id(path, n))
 		}
 
+		dir := c.Dir
+		if dir[0] != '/' {
+			dir = filepath.Join(baseDir, dir)
+		}
+
 		wf.WorkflowJobs[subPath] = &WorkflowJob{
-			Dir:   p.Dir,
+			Dir:   dir,
 			Needs: needs,
 		}
 
-		if err := wf.load(subPath, p); err != nil {
+		if err := wf.load(subPath, dir, c); err != nil {
 			return err
 		}
 	}
