@@ -60,7 +60,7 @@ func (a *App) Diff() error {
 	}
 
 	return wf.Run(func(job *WorkflowJob) error {
-		return job.Diff()
+		return job.Diff(wf)
 	})
 }
 
@@ -72,6 +72,6 @@ func (a *App) Apply() error {
 	}
 
 	return wf.Run(func(job *WorkflowJob) error {
-		return job.Apply()
+		return job.Apply(wf)
 	})
 }

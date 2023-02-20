@@ -1,8 +1,10 @@
 package kanvas
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -44,9 +46,15 @@ func (wf *Workflow) load(path, baseDir string, config Component) error {
 			dir = filepath.Join(baseDir, dir)
 		}
 
+		driver, err := newDriver(subPath, dir, config)
+		if err != nil {
+			return nil
+		}
+
 		wf.WorkflowJobs[subPath] = &WorkflowJob{
-			Dir:   dir,
-			Needs: needs,
+			Dir:    dir,
+			Needs:  needs,
+			Driver: driver,
 		}
 
 		if err := wf.load(subPath, dir, c); err != nil {
@@ -95,4 +103,10 @@ func (wf *Workflow) parallel(names []string, f func(job *WorkflowJob) error) err
 	}
 
 	return nil
+}
+
+func (wf *Workflow) exec(dir string, cmd []string) error {
+	c := exec.CommandContext(context.TODO(), cmd[0], cmd[1:]...)
+	c.Dir = dir
+	return c.Run()
 }
