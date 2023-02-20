@@ -80,6 +80,7 @@ func (wf *Workflow) parallel(names []string, f func(job *WorkflowJob) error) err
 	)
 
 	for _, n := range names {
+		n := n
 		go func() {
 			errCh <- wf.run(n, f)
 		}()
