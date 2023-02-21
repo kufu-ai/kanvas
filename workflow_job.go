@@ -25,7 +25,11 @@ func (j *WorkflowJob) runWithExtraArgs(wf *Workflow, dir string, cmd []string) e
 
 func (j *WorkflowJob) Diff(wf *Workflow) error {
 	if j.Ran {
-		return j.runWithExtraArgs(wf, j.Dir, j.Driver.diff)
+		return nil
+	}
+
+	if err := j.runWithExtraArgs(wf, j.Dir, j.Driver.diff); err != nil {
+		return err
 	}
 
 	j.Ran = true
@@ -35,7 +39,11 @@ func (j *WorkflowJob) Diff(wf *Workflow) error {
 
 func (j *WorkflowJob) Apply(wf *Workflow) error {
 	if j.Ran {
-		return j.runWithExtraArgs(wf, j.Dir, j.Driver.apply)
+		return nil
+	}
+
+	if err := j.runWithExtraArgs(wf, j.Dir, j.Driver.apply); err != nil {
+		return err
 	}
 
 	j.Ran = true
