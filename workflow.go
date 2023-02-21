@@ -1,10 +1,7 @@
 package kanvas
 
 import (
-	"context"
-	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 )
 
@@ -14,7 +11,13 @@ type Workflow struct {
 	Dir          string
 }
 
-func newWorkflow(config Component) (*Workflow, error) {
+type WorkflowJob struct {
+	Dir   string
+	Needs []string
+	*Driver
+}
+
+func NewWorkflow(config Component) (*Workflow, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -54,7 +57,7 @@ func (wf *Workflow) load(path, baseDir string, config Component) error {
 		wf.WorkflowJobs[subPath] = &WorkflowJob{
 			Dir:    dir,
 			Needs:  needs,
-			driver: driver,
+			Driver: driver,
 		}
 
 		if err := wf.load(subPath, dir, c); err != nil {
@@ -62,51 +65,4 @@ func (wf *Workflow) load(path, baseDir string, config Component) error {
 		}
 	}
 	return nil
-}
-
-func (wf *Workflow) Run(f func(job *WorkflowJob) error) error {
-	return wf.parallel(wf.Entry, f)
-}
-
-func (wf *Workflow) run(name string, f func(job *WorkflowJob) error) error {
-	job, ok := wf.WorkflowJobs[name]
-	if !ok {
-		return fmt.Errorf("component %q is not defined", name)
-	}
-
-	if err := wf.parallel(job.Needs, f); err != nil {
-		return err
-	}
-
-	return f(job)
-}
-
-func (wf *Workflow) parallel(names []string, f func(job *WorkflowJob) error) error {
-	var (
-		errs  []error
-		errCh = make(chan error)
-	)
-
-	for _, n := range names {
-		n := n
-		go func() {
-			errCh <- wf.run(n, f)
-		}()
-	}
-
-	for i := 0; i < len(names); i++ {
-		errs = append(errs, <-errCh)
-	}
-
-	if len(errs) > 0 {
-		return fmt.Errorf("failed resolving dependencies: %v", errs)
-	}
-
-	return nil
-}
-
-func (wf *Workflow) exec(dir string, cmd []string) error {
-	c := exec.CommandContext(context.TODO(), cmd[0], cmd[1:]...)
-	c.Dir = dir
-	return c.Run()
 }

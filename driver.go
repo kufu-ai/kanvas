@@ -4,12 +4,12 @@ import (
 	"fmt"
 )
 
-type driver struct {
-	diff  []string
-	apply []string
-	dir   string
+type Driver struct {
+	Diff  []string
+	Apply []string
+	Dir   string
 
-	args *Args
+	Args *Args
 }
 
 type Args struct {
@@ -41,14 +41,14 @@ type DynArg struct {
 	FromOutput string
 }
 
-func newDriver(id, dir string, c Component) (*driver, error) {
+func newDriver(id, dir string, c Component) (*Driver, error) {
 	if c.Docker != nil {
 		// TODO Append some unique-ish ID of the to-be-produced image
 		image := c.Docker.Image
-		return &driver{
-			dir:   dir,
-			diff:  []string{"docker", "build", "-t", image, "-f", c.Docker.File, dir},
-			apply: []string{"docker", "push", image},
+		return &Driver{
+			Dir:   dir,
+			Diff:  []string{"docker", "build", "-t", image, "-f", c.Docker.File, dir},
+			Apply: []string{"docker", "push", image},
 		}, nil
 	} else if c.Terraform != nil {
 		var args []string
@@ -63,11 +63,11 @@ func newDriver(id, dir string, c Component) (*driver, error) {
 			dynArgs.AddValueFromOutput(v.ValueFrom)
 		}
 
-		return &driver{
-			dir:   dir,
-			diff:  append([]string{"terraform", "plan"}, args...),
-			apply: append([]string{"terraform", "apply"}, args...),
-			args:  dynArgs,
+		return &Driver{
+			Dir:   dir,
+			Diff:  append([]string{"terraform", "plan"}, args...),
+			Apply: append([]string{"terraform", "apply"}, args...),
+			Args:  dynArgs,
 		}, nil
 	}
 

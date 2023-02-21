@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"kanvas"
+	"kanvas/app"
 	"kanvas/build"
 
 	"github.com/spf13/cobra"
@@ -23,7 +23,7 @@ func Root() *cobra.Command {
 		Use:   "diff",
 		Short: "Shows the diff between the desired state and the current state",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return run(cmd, configFile, func(a *kanvas.App) error {
+			return run(cmd, configFile, func(a *app.App) error {
 				return a.Diff()
 			})
 		},
@@ -34,7 +34,7 @@ func Root() *cobra.Command {
 		Use:   "apply",
 		Short: "Build the container image(s) if any and runs terraform-apply command(s) to deploy changes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return run(cmd, configFile, func(a *kanvas.App) error {
+			return run(cmd, configFile, func(a *app.App) error {
 				return a.Apply()
 			})
 		},
@@ -44,8 +44,8 @@ func Root() *cobra.Command {
 	return cmd
 }
 
-func run(cmd *cobra.Command, configFile string, do func(*kanvas.App) error) error {
-	app, err := kanvas.New(configFile)
+func run(cmd *cobra.Command, configFile string, do func(*app.App) error) error {
+	app, err := app.New(configFile)
 	if err != nil {
 		cmd.SilenceUsage = true
 		return err

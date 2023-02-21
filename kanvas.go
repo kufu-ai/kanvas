@@ -29,11 +29,7 @@ type Var struct {
 	ValueFrom string `yaml:"valueFrom"`
 }
 
-type App struct {
-	Config Component
-}
-
-func New(path string) (*App, error) {
+func New(path string) (*Component, error) {
 	var (
 		config Component
 	)
@@ -47,31 +43,5 @@ func New(path string) (*App, error) {
 		return nil, err
 	}
 
-	return &App{
-		Config: config,
-	}, nil
-}
-
-// Diff shows the diff between the desired state and the current state
-func (a *App) Diff() error {
-	wf, err := newWorkflow(a.Config)
-	if err != nil {
-		return err
-	}
-
-	return wf.Run(func(job *WorkflowJob) error {
-		return job.Diff(wf)
-	})
-}
-
-// Apply builds the container image(s) if any and runs terraform-apply command(s) to deploy changes
-func (a *App) Apply() error {
-	wf, err := newWorkflow(a.Config)
-	if err != nil {
-		return err
-	}
-
-	return wf.Run(func(job *WorkflowJob) error {
-		return job.Apply(wf)
-	})
+	return &config, nil
 }
