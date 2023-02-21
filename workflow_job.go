@@ -6,21 +6,21 @@ type WorkflowJob struct {
 	Outputs map[string]string
 	Ran     bool
 
-	Driver *driver
+	driver *driver
 }
 
-func (j *WorkflowJob) runWithExtraArgs(wf *Workflow, dir string, cmd []string) error {
+func (j *WorkflowJob) runWithExtraArgs(wf *Workflow, cmd []string) error {
 	var c []string
 
 	c = append(c, cmd...)
 
-	j.Driver.args.Visit(func(str string) {
+	j.driver.args.Visit(func(str string) {
 		c = append(c, str)
 	}, func(out string) {
 		// TODO Add the referenced output as an arg
 	})
 
-	return wf.exec(dir, c)
+	return wf.exec(j.Dir, c)
 }
 
 func (j *WorkflowJob) Diff(wf *Workflow) error {
@@ -28,7 +28,7 @@ func (j *WorkflowJob) Diff(wf *Workflow) error {
 		return nil
 	}
 
-	if err := j.runWithExtraArgs(wf, j.Dir, j.Driver.diff); err != nil {
+	if err := j.runWithExtraArgs(wf, j.driver.diff); err != nil {
 		return err
 	}
 
@@ -42,7 +42,7 @@ func (j *WorkflowJob) Apply(wf *Workflow) error {
 		return nil
 	}
 
-	if err := j.runWithExtraArgs(wf, j.Dir, j.Driver.apply); err != nil {
+	if err := j.runWithExtraArgs(wf, j.driver.apply); err != nil {
 		return err
 	}
 

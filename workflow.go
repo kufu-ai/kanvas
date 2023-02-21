@@ -54,7 +54,7 @@ func (wf *Workflow) load(path, baseDir string, config Component) error {
 		wf.WorkflowJobs[subPath] = &WorkflowJob{
 			Dir:    dir,
 			Needs:  needs,
-			Driver: driver,
+			driver: driver,
 		}
 
 		if err := wf.load(subPath, dir, c); err != nil {
