@@ -7,7 +7,8 @@ import (
 )
 
 type App struct {
-	Config kanvas.Component
+	Config  kanvas.Component
+	Runtime *kanvas.Runtime
 }
 
 func New(path string) (*App, error) {
@@ -16,8 +17,11 @@ func New(path string) (*App, error) {
 		return nil, err
 	}
 
+	r := kanvas.NewRuntime()
+
 	return &App{
-		Config: *c,
+		Config:  *c,
+		Runtime: r,
 	}, nil
 
 }
@@ -29,7 +33,7 @@ func (a *App) Diff() error {
 		return err
 	}
 
-	p := interpreter.New(wf)
+	p := interpreter.New(wf, a.Runtime)
 
 	return p.Diff()
 }
@@ -41,18 +45,29 @@ func (a *App) Apply() error {
 		return err
 	}
 
-	p := interpreter.New(wf)
+	p := interpreter.New(wf, a.Runtime)
 
 	return p.Apply()
 }
 
-func (a *App) Export(dir string) error {
+func (a *App) Export(format, dir string) error {
 	wf, err := kanvas.NewWorkflow(a.Config)
 	if err != nil {
 		return err
 	}
 
-	e := exporter.New(wf)
+	e := exporter.New(wf, a.Runtime)
 
-	return e.Export(dir)
+	return e.Export(format, dir)
+}
+
+func (a *App) Output(format, target string) error {
+	wf, err := kanvas.NewWorkflow(a.Config)
+	if err != nil {
+		return err
+	}
+
+	e := exporter.New(wf, a.Runtime)
+
+	return e.Output(format, target)
 }

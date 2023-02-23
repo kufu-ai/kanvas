@@ -9,6 +9,18 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
+const (
+	FormatGitHubActions = "githubactions"
+)
+
+func (e *Exporter) outputActionsWorkflows(target string) error {
+	outputs := map[string]string{}
+	if err := e.wf.WorkflowJobs[target].OutputFunc(e.r, outputs); err != nil {
+		return fmt.Errorf("unable to process outputs for target %q: %w", target, err)
+	}
+	return nil
+}
+
 func (e *Exporter) exportActionsWorkflows(dir string) error {
 	w := &actionsWorkflow{
 		name: "Plan deployment",
@@ -23,7 +35,7 @@ func (e *Exporter) exportActionsWorkflows(dir string) error {
 
 	outputs := map[string]map[string]string{}
 
-	const step = "main"
+	const step = "out"
 
 	// Traverse the DAG of jobs
 	for _, job := range e.wf.WorkflowJobs {
@@ -61,7 +73,8 @@ func (e *Exporter) exportActionsWorkflows(dir string) error {
 			needs:   needs,
 			steps: []actionsStep{
 				stepCheckout(),
-				stepRun(name, cmd),
+				stepRun("run", cmd),
+				stepRun(name, job.Output(FormatGitHubActions)),
 			},
 		}
 

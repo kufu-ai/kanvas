@@ -1,10 +1,8 @@
 package interpreter
 
 import (
-	"context"
 	"fmt"
 	"kanvas"
-	"os/exec"
 	"strings"
 )
 
@@ -18,9 +16,10 @@ type WorkflowJob struct {
 type Interpreter struct {
 	Workflow     *kanvas.Workflow
 	WorkflowJobs map[string]*WorkflowJob
+	runtime      *kanvas.Runtime
 }
 
-func New(wf *kanvas.Workflow) *Interpreter {
+func New(wf *kanvas.Workflow, r *kanvas.Runtime) *Interpreter {
 	wjs := map[string]*WorkflowJob{}
 	for k, v := range wf.WorkflowJobs {
 		v := v
@@ -33,6 +32,7 @@ func New(wf *kanvas.Workflow) *Interpreter {
 	return &Interpreter{
 		Workflow:     wf,
 		WorkflowJobs: wjs,
+		runtime:      r,
 	}
 }
 
@@ -77,12 +77,6 @@ func (p *Interpreter) parallel(names []string, f func(job *WorkflowJob) error) e
 	return nil
 }
 
-func (p *Interpreter) exec(dir string, cmd []string) error {
-	c := exec.CommandContext(context.TODO(), cmd[0], cmd[1:]...)
-	c.Dir = dir
-	return c.Run()
-}
-
 func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, cmd []string) error {
 	var c []string
 
@@ -108,7 +102,7 @@ func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, cmd []string) error {
 		c = append(c, val)
 	})
 
-	return p.exec(j.Dir, c)
+	return p.runtime.Exec(j.Dir, c)
 }
 
 func (p *Interpreter) Apply() error {
