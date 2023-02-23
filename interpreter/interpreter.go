@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"kanvas"
 	"os/exec"
+	"strings"
 )
 
 type WorkflowJob struct {
@@ -90,7 +91,21 @@ func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, cmd []string) error {
 	j.Driver.Args.Visit(func(str string) {
 		c = append(c, str)
 	}, func(out string) {
-		// TODO Add the referenced output as an arg
+		jobOutput := strings.SplitN(out, ".", 1)
+		jobName := jobOutput[0]
+		outName := jobOutput[1]
+
+		job, ok := p.WorkflowJobs[jobName]
+		if !ok {
+			panic(fmt.Errorf("job %q does not exist", jobName))
+		}
+
+		val, ok := job.Outputs[outName]
+		if !ok {
+			panic(fmt.Errorf("output %q does not exist", outName))
+		}
+
+		c = append(c, val)
 	})
 
 	return p.exec(j.Dir, c)
