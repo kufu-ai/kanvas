@@ -2,8 +2,8 @@ package app
 
 import (
 	"kanvas"
-	"kanvas/exporter"
 	"kanvas/interpreter"
+	"kanvas/plugin"
 )
 
 type App struct {
@@ -56,7 +56,7 @@ func (a *App) Export(format, dir string) error {
 		return err
 	}
 
-	e := exporter.New(wf, a.Runtime)
+	e := plugin.New(wf, a.Runtime)
 
 	return e.Export(format, dir)
 }
@@ -67,7 +67,7 @@ func (a *App) Output(format, target string) error {
 		return err
 	}
 
-	e := exporter.New(wf, a.Runtime)
+	e := plugin.New(wf, a.Runtime)
 
 	return e.Output(format, target)
 }

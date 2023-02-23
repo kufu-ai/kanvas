@@ -107,6 +107,7 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 				type terraformOutputs struct {
 					Outputs map[string]terraformOutput `json:"outputs"`
 				}
+
 				m := terraformOutputs{
 					Outputs: map[string]terraformOutput{},
 				}

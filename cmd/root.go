@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"kanvas/app"
 	"kanvas/build"
-	"kanvas/exporter"
+	"kanvas/plugin"
 
 	"github.com/spf13/cobra"
 )
@@ -57,7 +57,7 @@ func Root() *cobra.Command {
 				})
 			},
 		}
-		export.Flags().StringVarP(&format, "format", "f", "", fmt.Sprintf("Export workflows in this format. The only supported value is %q", exporter.FormatGitHubActions))
+		export.Flags().StringVarP(&format, "format", "f", "", fmt.Sprintf("Export workflows in this format. The only supported value is %q", plugin.FormatGitHubActions))
 		export.Flags().StringVarP(&exportDir, "dir", "d", "", "Writes the exported workflow definitions to this directory")
 		cmd.AddCommand(export)
 	}
@@ -76,7 +76,7 @@ func Root() *cobra.Command {
 				})
 			},
 		}
-		output.Flags().StringVarP(&format, "format", "f", "", fmt.Sprintf("Write outputs in this format. The only supported value is %q", exporter.FormatGitHubActions))
+		output.Flags().StringVarP(&format, "format", "f", "", fmt.Sprintf("Write outputs in this format. The only supported value is %q", plugin.FormatGitHubActions))
 		output.Flags().StringVarP(&target, "target", "t", "", "Targeted job's name for collecting and writings outputs")
 		cmd.AddCommand(output)
 	}

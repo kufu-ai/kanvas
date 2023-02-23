@@ -1,4 +1,4 @@
-package exporter
+package plugin
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ const (
 	FormatGitHubActions = "githubactions"
 )
 
-func (e *Exporter) outputActionsWorkflows(target string) error {
+func (e *Plugin) outputActionsWorkflows(target string) error {
 	outputs := map[string]string{}
 	if err := e.wf.WorkflowJobs[target].OutputFunc(e.r, outputs); err != nil {
 		return fmt.Errorf("unable to process outputs for target %q: %w", target, err)
@@ -21,7 +21,7 @@ func (e *Exporter) outputActionsWorkflows(target string) error {
 	return nil
 }
 
-func (e *Exporter) exportActionsWorkflows(dir string) error {
+func (e *Plugin) exportActionsWorkflows(dir string) error {
 	w := &actionsWorkflow{
 		name: "Plan deployment",
 		on: map[string]interface{}{
