@@ -2,6 +2,7 @@ package app
 
 import (
 	"kanvas"
+	"kanvas/exporter"
 	"kanvas/interpreter"
 )
 
@@ -43,4 +44,15 @@ func (a *App) Apply() error {
 	p := interpreter.New(wf)
 
 	return p.Apply()
+}
+
+func (a *App) Export(dir string) error {
+	wf, err := kanvas.NewWorkflow(a.Config)
+	if err != nil {
+		return err
+	}
+
+	e := exporter.New(wf)
+
+	return e.Export(dir)
 }

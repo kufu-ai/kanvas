@@ -41,6 +41,21 @@ func Root() *cobra.Command {
 	}
 	cmd.AddCommand(apply)
 
+	var (
+		exportDir string
+	)
+	exportActions := &cobra.Command{
+		Use:   "export",
+		Short: "Export the apply and the diff workflows to GitHub Actions",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return run(cmd, configFile, func(a *app.App) error {
+				return a.Export(exportDir)
+			})
+		},
+	}
+	exportActions.Flags().StringVarP(&exportDir, "dir", "d", "", "Writes the exported workflow definitions to this directory")
+	cmd.AddCommand(exportActions)
+
 	return cmd
 }
 
