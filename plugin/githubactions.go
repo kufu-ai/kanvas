@@ -86,6 +86,10 @@ func (e *Plugin) exportActionsWorkflows(dir string) error {
 		return fmt.Errorf("unable to marshal plan workflow definition: %w", err)
 	}
 
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("unable to create directory %q: %w", dir, err)
+	}
+
 	if err := os.WriteFile(filepath.Join(dir, "plan_deployment.yaml"), planYamlData, 0644); err != nil {
 		return fmt.Errorf("unable to write the plan workflow definition: %w", err)
 	}
