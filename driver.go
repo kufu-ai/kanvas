@@ -132,5 +132,9 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 		}, nil
 	}
 
-	return nil, fmt.Errorf("no driver specified for this component")
+	if len(c.Components) == 0 {
+		return nil, fmt.Errorf("invalid component: this component has no driver or components")
+	}
+
+	return nil, nil
 }
