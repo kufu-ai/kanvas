@@ -12,9 +12,9 @@ type Workflow struct {
 }
 
 type WorkflowJob struct {
-	Dir   string
-	Needs []string
-	*Driver
+	Dir    string
+	Needs  []string
+	Driver *Driver
 }
 
 func NewWorkflow(config Component) (*Workflow, error) {
@@ -45,13 +45,16 @@ func (wf *Workflow) load(path, baseDir string, config Component) error {
 		}
 
 		dir := c.Dir
+		if dir == "" {
+			dir = name
+		}
 		if dir[0] != '/' {
 			dir = filepath.Join(baseDir, dir)
 		}
 
-		driver, err := newDriver(subPath, dir, config)
+		driver, err := newDriver(subPath, dir, c)
 		if err != nil {
-			return nil
+			return err
 		}
 
 		wf.WorkflowJobs[subPath] = &WorkflowJob{

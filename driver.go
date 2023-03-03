@@ -63,6 +63,7 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 			Diff:   []string{"docker", "build", "-t", image, "-f", c.Docker.File, dir},
 			Apply:  []string{"docker", "push", image},
 			Output: output,
+			Args:   &Args{},
 			OutputFunc: func(r *Runtime, o map[string]string) error {
 				var buf bytes.Buffer
 				if err := r.Exec(dir, []string{"docker", "inspect", "--format={{index .RepoDigests 0}}"}, ExecStdout(&buf)); err != nil {

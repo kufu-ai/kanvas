@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,26 +12,47 @@ import (
 
 const (
 	FormatGitHubActions = "githubactions"
+
+	FormatDefault = FormatGitHubActions
 )
 
 func (e *Plugin) outputActionsWorkflows(target string) error {
 	outputs := map[string]string{}
-	if err := e.wf.WorkflowJobs[target].OutputFunc(e.r, outputs); err != nil {
+	if err := e.wf.WorkflowJobs[target].Driver.OutputFunc(e.r, outputs); err != nil {
 		return fmt.Errorf("unable to process outputs for target %q: %w", target, err)
 	}
+
+	// See https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
+	githubOutput := os.Getenv("GITHUB_OUTPUT")
+
+	f, err := os.OpenFile(githubOutput, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for k, v := range outputs {
+		if _, err := f.WriteString(fmt.Sprintf("%s=%s\n", k, v)); err != nil {
+			return fmt.Errorf("unable to write a kv to GITHUB_OUTPUT: %w", err)
+		}
+	}
+
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("unable to close GITHUB_OUTPUT: %w", err)
+	}
+
 	return nil
 }
 
 func (e *Plugin) exportActionsWorkflows(dir string) error {
 	w := &actionsWorkflow{
-		name: "Plan deployment",
-		on: map[string]interface{}{
+		Name: "Plan deployment",
+		On: map[string]interface{}{
 			"pull_request": map[string][]string{
 				"branches":     {"main"},
 				"paths-ignore": {"**.md", "**/docs/**"},
 			},
 		},
-		jobs: make(map[string]actionsJob, len(e.wf.WorkflowJobs)),
+		Jobs: make(map[string]actionsJob, len(e.wf.WorkflowJobs)),
 	}
 
 	outputs := map[string]map[string]string{}
@@ -39,7 +61,11 @@ func (e *Plugin) exportActionsWorkflows(dir string) error {
 
 	// Traverse the DAG of jobs
 	for _, job := range e.wf.WorkflowJobs {
-		job.Args.Visit(func(str string) {
+		if job.Driver == nil {
+			continue
+		}
+
+		job.Driver.Args.Visit(func(str string) {
 		}, func(out string) {
 			jobAndOutput := strings.SplitN(out, ".", 1)
 			jobName := strings.ReplaceAll(jobAndOutput[0], "/", "-")
@@ -51,6 +77,10 @@ func (e *Plugin) exportActionsWorkflows(dir string) error {
 	}
 
 	for name, job := range e.wf.WorkflowJobs {
+		if job.Driver == nil {
+			continue
+		}
+
 		name = strings.ReplaceAll(name, "/", "-")
 
 		var needs []string
@@ -59,8 +89,8 @@ func (e *Plugin) exportActionsWorkflows(dir string) error {
 		}
 
 		var cmd []string
-		cmd = append(cmd, job.Diff...)
-		job.Args.Visit(func(str string) {
+		cmd = append(cmd, job.Driver.Diff...)
+		job.Driver.Args.Visit(func(str string) {
 		}, func(out string) {
 			jobAndOutput := strings.SplitN(out, ".", 1)
 			jobName := strings.ReplaceAll(jobAndOutput[0], "/", "-")
@@ -68,13 +98,13 @@ func (e *Plugin) exportActionsWorkflows(dir string) error {
 		})
 
 		j := &actionsJob{
-			runsOn:  "ubuntu-latest",
-			outputs: outputs[name],
-			needs:   needs,
-			steps: []actionsStep{
+			RunsOn:  "ubuntu-latest",
+			Outputs: outputs[name],
+			Needs:   needs,
+			Steps: []actionsStep{
 				stepCheckout(),
 				stepRun("run", cmd),
-				stepRun(name, job.Output(FormatGitHubActions)),
+				stepRun(name, job.Driver.Output(FormatGitHubActions)),
 			},
 		}
 
@@ -98,33 +128,33 @@ func (e *Plugin) exportActionsWorkflows(dir string) error {
 }
 
 type actionsWorkflow struct {
-	name string                 `yaml:"name"`
-	on   map[string]interface{} `yaml:"on"`
-	jobs map[string]actionsJob  `yaml:"jobs"`
+	Name string                 `yaml:"name"`
+	On   map[string]interface{} `yaml:"on"`
+	Jobs map[string]actionsJob  `yaml:"jobs"`
 }
 
 func (w *actionsWorkflow) AddJob(name string, def actionsJob) {
-	w.jobs[name] = def
+	w.Jobs[name] = def
 }
 
 type actionsJob struct {
-	needs   []string          `yaml:"needs,omitempty"`
-	runsOn  string            `yaml:"runs_on"`
-	outputs map[string]string `yaml:"outputs,omitempty"`
-	steps   []actionsStep     `yaml:"steps"`
+	Needs   []string          `yaml:"needs,omitempty"`
+	RunsOn  string            `yaml:"runs_on"`
+	Outputs map[string]string `yaml:"outputs,omitempty"`
+	Steps   []actionsStep     `yaml:"steps"`
 }
 
 type actionsStep struct {
-	id   string                 `yaml:"id,omitempty"`
-	run  string                 `yaml:"run,omitempty"`
-	uses string                 `yaml:"uses,omitempty"`
-	with map[string]interface{} `yaml:"with,omitempty"`
+	ID   string                 `yaml:"id,omitempty"`
+	Run  string                 `yaml:"run,omitempty"`
+	Uses string                 `yaml:"uses,omitempty"`
+	With map[string]interface{} `yaml:"with,omitempty"`
 }
 
 func stepCheckout() actionsStep {
 	return actionsStep{
-		uses: "actions/checkout@v3",
-		with: map[string]interface{}{
+		Uses: "actions/checkout@v3",
+		With: map[string]interface{}{
 			"fetch-depth": 0,
 		},
 	}
@@ -132,7 +162,7 @@ func stepCheckout() actionsStep {
 
 func stepRun(id string, cmd []string) actionsStep {
 	return actionsStep{
-		id:  id,
-		run: strings.Join(cmd, " "),
+		ID:  id,
+		Run: strings.Join(cmd, " "),
 	}
 }
