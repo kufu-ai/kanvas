@@ -108,7 +108,7 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 			jobAndOutput := strings.SplitN(out, ".", 2)
 			if len(jobAndOutput) != 2 {
 				// TODO make this error instead
-				panic(fmt.Errorf("Could not find dot(.) within %q", out))
+				panic(fmt.Errorf("could not find dot(.) within %q", out))
 			}
 			var jobName string
 			if j := jobAndOutput[0]; j[0] == '/' {
