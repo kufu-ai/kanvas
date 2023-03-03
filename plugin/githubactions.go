@@ -59,13 +59,20 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 
 	const step = "out"
 
+	id := func(raw string) string {
+		if raw[0] == '/' {
+			raw = raw[1:]
+		}
+		return strings.ReplaceAll(raw, "/", "-")
+	}
+
 	// Traverse the DAG of jobs
 	for name, job := range e.wf.WorkflowJobs {
 		if job.Driver == nil {
 			continue
 		}
 
-		name = strings.ReplaceAll(name, "/", "-")
+		name = id(name)
 
 		job.Driver.Args.Visit(func(str string) {
 		}, func(out string) {
@@ -76,10 +83,10 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 			}
 			var jobName string
 			if j := jobAndOutput[0]; j[0] == '/' {
-				jobName = strings.ReplaceAll(j, "/", "-")
+				jobName = id(j)
 			} else {
 				fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
-				jobName = strings.ReplaceAll(fqn, "/", "-")
+				jobName = id(fqn)
 			}
 			if _, ok := outputs[jobName]; !ok {
 				outputs[jobName] = map[string]string{}
@@ -93,11 +100,11 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 			continue
 		}
 
-		name = strings.ReplaceAll(name, "/", "-")
+		name = id(name)
 
 		var needs []string
 		for _, n := range job.Needs {
-			needs = append(needs, strings.ReplaceAll(n, "/", "-"))
+			needs = append(needs, id(n))
 		}
 
 		var cmd []string
@@ -112,10 +119,10 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 			}
 			var jobName string
 			if j := jobAndOutput[0]; j[0] == '/' {
-				jobName = strings.ReplaceAll(j, "/", "-")
+				jobName = id(j)
 			} else {
 				fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
-				jobName = strings.ReplaceAll(fqn, "/", "-")
+				jobName = id(fqn)
 			}
 			cmd = append(cmd, fmt.Sprintf("${{ needs.%s.outputs.%s }}", jobName, jobAndOutput[1]))
 		})
