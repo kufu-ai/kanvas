@@ -19,7 +19,7 @@ func Root() *cobra.Command {
 		Short:   "A container-based application deployer",
 		Version: build.Version(),
 	}
-	cmd.PersistentFlags().StringVarP(&configFile, "config", "f", "kanvas.yaml", "The path to the config file that declares the deployment workflow")
+	cmd.PersistentFlags().StringVarP(&configFile, "config", "c", "kanvas.yaml", "The path to the config file that declares the deployment workflow")
 
 	diff := &cobra.Command{
 		Use:   "diff",
