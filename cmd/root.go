@@ -53,11 +53,12 @@ func Root() *cobra.Command {
 			Short: "Export the apply and the diff workflows to GitHub Actions",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				return run(cmd, configFile, func(a *app.App) error {
+					cmd.SilenceUsage = true
 					return a.Export(format, exportDir)
 				})
 			},
 		}
-		export.Flags().StringVarP(&format, "format", "f", "", fmt.Sprintf("Export workflows in this format. The only supported value is %q", plugin.FormatGitHubActions))
+		export.Flags().StringVarP(&format, "format", "f", plugin.FormatDefault, fmt.Sprintf("Export workflows in this format. The only supported value is %q", plugin.FormatGitHubActions))
 		export.Flags().StringVarP(&exportDir, "dir", "d", "", "Writes the exported workflow definitions to this directory")
 		cmd.AddCommand(export)
 	}
@@ -76,7 +77,7 @@ func Root() *cobra.Command {
 				})
 			},
 		}
-		output.Flags().StringVarP(&format, "format", "f", "", fmt.Sprintf("Write outputs in this format. The only supported value is %q", plugin.FormatGitHubActions))
+		output.Flags().StringVarP(&format, "format", "f", plugin.FormatDefault, fmt.Sprintf("Write outputs in this format. The only supported value is %q", plugin.FormatGitHubActions))
 		output.Flags().StringVarP(&target, "target", "t", "", "Targeted job's name for collecting and writings outputs")
 		cmd.AddCommand(output)
 	}
