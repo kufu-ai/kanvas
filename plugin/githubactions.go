@@ -60,15 +60,27 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 	const step = "out"
 
 	// Traverse the DAG of jobs
-	for _, job := range e.wf.WorkflowJobs {
+	for name, job := range e.wf.WorkflowJobs {
 		if job.Driver == nil {
 			continue
 		}
 
+		name = strings.ReplaceAll(name, "/", "-")
+
 		job.Driver.Args.Visit(func(str string) {
 		}, func(out string) {
-			jobAndOutput := strings.SplitN(out, ".", 1)
-			jobName := strings.ReplaceAll(jobAndOutput[0], "/", "-")
+			jobAndOutput := strings.SplitN(out, ".", 2)
+			if len(jobAndOutput) != 2 {
+				// TODO make this error instead
+				panic(fmt.Errorf("Could not find dot(.) within %q", out))
+			}
+			var jobName string
+			if j := jobAndOutput[0]; j[0] == '/' {
+				jobName = strings.ReplaceAll(j, "/", "-")
+			} else {
+				fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
+				jobName = strings.ReplaceAll(fqn, "/", "-")
+			}
 			if _, ok := outputs[jobName]; !ok {
 				outputs[jobName] = map[string]string{}
 			}
@@ -91,18 +103,30 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 		var cmd []string
 		cmd = append(cmd, job.Driver.Diff...)
 		job.Driver.Args.Visit(func(str string) {
+			cmd = append(cmd, str)
 		}, func(out string) {
-			jobAndOutput := strings.SplitN(out, ".", 1)
-			jobName := strings.ReplaceAll(jobAndOutput[0], "/", "-")
+			jobAndOutput := strings.SplitN(out, ".", 2)
+			if len(jobAndOutput) != 2 {
+				// TODO make this error instead
+				panic(fmt.Errorf("Could not find dot(.) within %q", out))
+			}
+			var jobName string
+			if j := jobAndOutput[0]; j[0] == '/' {
+				jobName = strings.ReplaceAll(j, "/", "-")
+			} else {
+				fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
+				jobName = strings.ReplaceAll(fqn, "/", "-")
+			}
 			cmd = append(cmd, fmt.Sprintf("${{ needs.%s.outputs.%s }}", jobName, jobAndOutput[1]))
 		})
 
+		o := outputs[name]
 		j := &actionsJob{
 			RunsOn: "ubuntu-latest",
 			Container: container{
 				Image: kanvasContainerImage,
 			},
-			Outputs: outputs[name],
+			Outputs: o,
 			Needs:   needs,
 			Steps: []actionsStep{
 				stepCheckout(),

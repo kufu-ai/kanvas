@@ -21,7 +21,7 @@ type Docker struct {
 
 type Terraform struct {
 	Target string `yaml:"target"`
-	Vars   []Var  `yaml:"var"`
+	Vars   []Var  `yaml:"vars"`
 }
 
 type Var struct {
