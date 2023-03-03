@@ -50,7 +50,7 @@ func (a *App) Apply() error {
 	return p.Apply()
 }
 
-func (a *App) Export(format, dir string) error {
+func (a *App) Export(format, dir, kanvasContainerImage string) error {
 	wf, err := kanvas.NewWorkflow(a.Config)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (a *App) Export(format, dir string) error {
 
 	e := plugin.New(wf, a.Runtime)
 
-	return e.Export(format, dir)
+	return e.Export(format, dir, kanvasContainerImage)
 }
 
 func (a *App) Output(format, target string) error {

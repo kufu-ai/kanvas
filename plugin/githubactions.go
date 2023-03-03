@@ -43,7 +43,7 @@ func (e *Plugin) outputActionsWorkflows(target string) error {
 	return nil
 }
 
-func (e *Plugin) exportActionsWorkflows(dir string) error {
+func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error {
 	w := &actionsWorkflow{
 		Name: "Plan deployment",
 		On: map[string]interface{}{
@@ -98,7 +98,10 @@ func (e *Plugin) exportActionsWorkflows(dir string) error {
 		})
 
 		j := &actionsJob{
-			RunsOn:  "ubuntu-latest",
+			RunsOn: "ubuntu-latest",
+			Container: container{
+				Image: kanvasContainerImage,
+			},
 			Outputs: outputs[name],
 			Needs:   needs,
 			Steps: []actionsStep{
@@ -138,10 +141,15 @@ func (w *actionsWorkflow) AddJob(name string, def actionsJob) {
 }
 
 type actionsJob struct {
-	Needs   []string          `yaml:"needs,omitempty"`
-	RunsOn  string            `yaml:"runs_on"`
-	Outputs map[string]string `yaml:"outputs,omitempty"`
-	Steps   []actionsStep     `yaml:"steps"`
+	Needs     []string          `yaml:"needs,omitempty"`
+	RunsOn    string            `yaml:"runs_on"`
+	Container container         `yaml:"container"`
+	Outputs   map[string]string `yaml:"outputs,omitempty"`
+	Steps     []actionsStep     `yaml:"steps"`
+}
+
+type container struct {
+	Image string `yaml:"image"`
 }
 
 type actionsStep struct {

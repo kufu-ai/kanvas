@@ -45,8 +45,9 @@ func Root() *cobra.Command {
 
 	{
 		var (
-			exportDir string
-			format    string
+			exportDir            string
+			format               string
+			kanvasContainerImage string
 		)
 		export := &cobra.Command{
 			Use:   "export",
@@ -54,12 +55,13 @@ func Root() *cobra.Command {
 			RunE: func(cmd *cobra.Command, args []string) error {
 				return run(cmd, configFile, func(a *app.App) error {
 					cmd.SilenceUsage = true
-					return a.Export(format, exportDir)
+					return a.Export(format, exportDir, kanvasContainerImage)
 				})
 			},
 		}
 		export.Flags().StringVarP(&format, "format", "f", plugin.FormatDefault, fmt.Sprintf("Export workflows in this format. The only supported value is %q", plugin.FormatGitHubActions))
 		export.Flags().StringVarP(&exportDir, "dir", "d", "", "Writes the exported workflow definitions to this directory")
+		export.Flags().StringVarP(&kanvasContainerImage, "kanvas-container-image", "i", "kanvas:example", "Use this image for running kanvas-related commands within GitHub Actions workflow job(s)")
 		cmd.AddCommand(export)
 	}
 

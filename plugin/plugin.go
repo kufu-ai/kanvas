@@ -17,12 +17,12 @@ func New(wf *kanvas.Workflow, r *kanvas.Runtime) *Plugin {
 	}
 }
 
-func (e *Plugin) Export(format string, dir string) error {
+func (e *Plugin) Export(format string, dir, kanvasContainerImage string) error {
 	if format != FormatGitHubActions {
 		return fmt.Errorf("unsupported format %q", format)
 	}
 
-	return e.exportActionsWorkflows(dir)
+	return e.exportActionsWorkflows(dir, kanvasContainerImage)
 }
 
 func (e *Plugin) Output(format, target string) error {

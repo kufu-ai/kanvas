@@ -1,0 +1,9 @@
+name: Plan deployment
+on:
+  pull_request:
+    branches:
+    - main
+    paths-ignore:
+    - "**.md"
+    - "**/docs/**"
+jobs: {}
