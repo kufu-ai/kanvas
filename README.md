@@ -197,7 +197,7 @@ environments:
 
 **Example**:
 
-A more complete example of the whole configuration which involves environments are shown below for your reference.
+A more complete example of the whole configuration which involves `environments`, `defaults`, and `after` are shown below for your reference.
 
 ```
 environments:
