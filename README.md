@@ -30,7 +30,63 @@ Under the hood, it runs on vanilla `docker` and `terraform`. Anything that can b
 
 ## Configuration syntax
 
+A kanvas configuration is conventionally written in a file named `kanvas.yaml`.
+
+It must contain a `components` field that contains one or more components:
+
+```yaml
+components:
+  infra:
+    # snip
+  k8s-cluster:
+    # snip
+  containerimage:
+    # snip
+  app:
+    # snip
 ```
+
+Each component requires `dir`, which is the path to the directory that contains everything you need to `plan` and `apply` the component:
+
+```yaml
+components:
+  infra:
+    dir: path/to/your/infra/terraform/project
+  k8s-cluster:
+    dir: path/to/your/k8s/terraform/project
+  containerimage:
+    dir: path/to/docker/build/context
+  app:
+    dir: path/to/k8s/manifests/or/docker-compose-config
+```
+
+Each component can optionally have `needs`, which lists names of other components that ths component depends on. Here, if we say `k8s-cluste depends on (or needs) infra`, that means the `infra` terraform project must be applied before the `k8s-cluster` terraform project is applied:
+
+```yaml
+components:
+  infra:
+    dir: path/to/your/infra/terraform/project
+  k8s-cluster:
+    dir: path/to/your/k8s/terraform/project
+    needs:
+    - infra
+  containerimage:
+    dir: path/to/docker/build/context
+  app:
+    dir: path/to/k8s/manifests/or/docker-compose-config
+    needs:
+    - k8s-cluster
+    - containerimage
+```
+
+Each component can optionally take any of the below provider configurations:
+
+- `docker`
+- `terraform`
+
+Here's a more complete example of `kanvas.yaml` that covers everything introduced so far:
+
+```yaml
 components:
   product1:
     components:
@@ -69,7 +125,7 @@ components:
           target: argocd_application.kanvas
 ```
 
-The directory structure can be:
+In this example, the directory structure is supposed to be:
 
 - product1/
   - base
@@ -83,7 +139,7 @@ or
   - 02-argocd
   - 03-argocd-resources
 
-In the second form, `depends_on` values are induced from the two digits before `-`, so that the projects are planned and applied in the ascending order of the denoted number.
+In the second form, `needs` values are induced from the two digits before `-`, so that the projects are planned and applied in the ascending order of the denoted number.
 
 The above configuration implies that:
 
