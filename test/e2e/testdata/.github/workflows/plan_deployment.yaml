@@ -7,21 +7,23 @@ on:
     - "**.md"
     - "**/docs/**"
 jobs:
-  -product1-appimage:
+  product1-appimage:
     runs_on: ubuntu-latest
     container:
       image: kanvas:example
+    outputs:
+      id: ${{ steps.out.outputs.id }}
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - id: run
       run: docker build -t davinci-std/example:myownprefix- -f  /containerimages/app
-    - id: -product1-appimage
+    - id: product1-appimage
       run: kanvas output -t /product1/appimage -f githubactions
-  -product1-argocd:
+  product1-argocd:
     needs:
-    - -product1-base
+    - product1-base
     runs_on: ubuntu-latest
     container:
       image: kanvas:example
@@ -30,12 +32,12 @@ jobs:
       with:
         fetch-depth: 0
     - id: run
-      run: terraform plan -target aws_alb.argocd_api
-    - id: -product1-argocd
+      run: terraform plan -target aws_alb.argocd_api -var ${{ needs.product1-base.outputs.cluster_endpoint }} -var ${{ needs.product1-base.outputs.cluster_token }}
+    - id: product1-argocd
       run: kanvas output -t /product1/argocd -f githubactions
-  -product1-argocd_resources:
+  product1-argocd_resources:
     needs:
-    - -product1-argocd
+    - product1-argocd
     runs_on: ubuntu-latest
     container:
       image: kanvas:example
@@ -45,19 +47,22 @@ jobs:
         fetch-depth: 0
     - id: run
       run: terraform plan -target argocd_application.kanvas
-    - id: -product1-argocd_resources
+    - id: product1-argocd_resources
       run: kanvas output -t /product1/argocd_resources -f githubactions
-  -product1-base:
+  product1-base:
     needs:
-    - -product1-appimage
+    - product1-appimage
     runs_on: ubuntu-latest
     container:
       image: kanvas:example
+    outputs:
+      cluster_endpoint: ${{ steps.out.outputs.cluster_endpoint }}
+      cluster_token: ${{ steps.out.outputs.cluster_token }}
     steps:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - id: run
-      run: terraform plan -target null_resource.eks_cluster
-    - id: -product1-base
+      run: terraform plan -target null_resource.eks_cluster -var ${{ needs.product1-appimage.outputs.id }}
+    - id: product1-base
       run: kanvas output -t /product1/base -f githubactions
