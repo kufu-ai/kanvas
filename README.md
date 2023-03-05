@@ -112,16 +112,17 @@ Each component takes any of the below provider configurations:
       - name: vpc_id
         valueFrom: infra.vpc_id
   ```
-- `kubernetes` deploys the k8s app in various ways using `uni`.
+- `kubernetes` deploys the k8s app in various ways using `kargo`, with per-environment configuration for the right balance between speed and safety.
 
-  By using `uni`, it can deploy to the K8s cluster by directly running
+  The `kubernetes` provider can deploy your contained application to the K8s cluster by directly running
   `helm`, `kustomize`, `kompose`, or indirectly via `argocd`.
 
-  `kanvas` allows flexible configuration for the right balance between fast iteration vs safe deployments.
-
-  More concretely, by combining it with `environments`, it's easy to
+  By combining it with `environments`, it's easy to
   directly deploy for test and preview environments, while
   requiring deployments via ArgoCD for production for compliance and auditing.
+  Please see [Environments](#advanced-environments) for more information.
+
+  The below is the reference configuration that covers all the required and optional fields available for this provider:
 
   ```yaml
   app:
@@ -129,56 +130,57 @@ Each component takes any of the below provider configurations:
     # `kompose` to transfom it to K8s manifests
     # If it contains `Chart.yaml`, it runs `helm diff` and `helm upgrade --install`.
     dir: deploy
-    # This maps to --plugin-env in case you're going to uses the `argocd` option below.
-    # Otherwise all the envs are set before calling commands (like kompose, kustomize, kubectl, helm, etc.)
-    env:
-    - name: STAGE
-      value: prod
-    - name: FOO
-      valueFrom: component_name.foo
-    # kustomize instructs kanvas to deploy the app using `kustomize`.
-    # It has two major modes. The first mode directly calls `kustomize`, whereas
-    # the second indirectly call it via `argocd`.
-    # The first mode is triggered by setting only `helm`.
-    # The second is enabled when you set `argocd` along with `kustomize`.
-    kustomize:
-      # kustomize.image maps to --kustomize-image of argocd-app-create.
-      image:
-    # helm instructs kanvas to deploy the app using `helm`.
-    # It has two major modes. The first mode directly calls `helm`, whereas
-    # the second indirectly call it via `argocd`.
-    # The first mode is triggered by setting only `helm`.
-    # The second is enabled when you set `argocd` along with `helm`.
-    helm:
-      # helm.repo maps to --repo of argocd-app-create
-      # in case kubernetes.argocd is not empty.
-      repo: https://charts.helm.sh/stable
-      # --helm-chart
-      chart: mychart
-      # --revision
-      version: 1.2.3
-      # helm.set corresponds to `--helm-set $name=$value` flags of `argocd app create` command
-      set:
-      - name: foo
-        value: foo
-      - name: bar
-        valueFrom: component_name.bar
-    argocd:
-      # argocd.repo maps to --repo of argocd-app-create.
-      repo: github.com/myorg/myrepo.git
-      # argocd.path maps to --path of argocd-app-create.
-      # Note: In case you had kubernetes.dir along with argocd.path,
-      # kanvas automatically git-push the content of dir to $argocd_repo/$argocd_path.
-      # To opt-out of it, set `push: false`.
-      path: path/to/dir/in/repo
-      # --dir-recurse
-      dirRecurse: true
-      # --dest-namespace
-      namespace: default
-      # serverFrom maps to --dest-server where the flag value is take from the output of another kanvas component
-      serverFrom: component_name.k8s_endpoint
-      # Note that the config management plugin definition in the configmap
-      # and the --config-management-plugin flag passed to argocd-app-create # command is auto-generated.
+    kubernetes:
+      # This maps to --plugin-env in case you're going to uses the `argocd` option below.
+      # Otherwise all the envs are set before calling commands (like kompose, kustomize, kubectl, helm, etc.)
+      env:
+      - name: STAGE
+        value: prod
+      - name: FOO
+        valueFrom: component_name.foo
+      # kustomize instructs kanvas to deploy the app using `kustomize`.
+      # It has two major modes. The first mode directly calls `kustomize`, whereas
+      # the second indirectly call it via `argocd`.
+      # The first mode is triggered by setting only `helm`.
+      # The second is enabled when you set `argocd` along with `kustomize`.
+      kustomize:
+        # kustomize.image maps to --kustomize-image of argocd-app-create.
+        image:
+      # helm instructs kanvas to deploy the app using `helm`.
+      # It has two major modes. The first mode directly calls `helm`, whereas
+      # the second indirectly call it via `argocd`.
+      # The first mode is triggered by setting only `helm`.
+      # The second is enabled when you set `argocd` along with `helm`.
+      helm:
+        # helm.repo maps to --repo of argocd-app-create
+        # in case kubernetes.argocd is not empty.
+        repo: https://charts.helm.sh/stable
+        # --helm-chart
+        chart: mychart
+        # --revision
+        version: 1.2.3
+        # helm.set corresponds to `--helm-set $name=$value` flags of `argocd app create` command
+        set:
+        - name: foo
+          value: foo
+        - name: bar
+          valueFrom: component_name.bar
+      argocd:
+        # argocd.repo maps to --repo of argocd-app-create.
+        repo: github.com/myorg/myrepo.git
+        # argocd.path maps to --path of argocd-app-create.
+        # Note: In case you had kubernetes.dir along with argocd.path,
+        # kanvas automatically git-push the content of dir to $argocd_repo/$argocd_path.
+        # To opt-out of it, set `push: false`.
+        path: path/to/dir/in/repo
+        # --dir-recurse
+        dirRecurse: true
+        # --dest-namespace
+        namespace: default
+        # serverFrom maps to --dest-server where the flag value is take from the output of another kanvas component
+        serverFrom: component_name.k8s_endpoint
+        # Note that the config management plugin definition in the configmap
+        # and the --config-management-plugin flag passed to argocd-app-create # command is auto-generated.
   ```
 
 Here's a more complete example of `kanvas.yaml` that covers everything introduced so far:
