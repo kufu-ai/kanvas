@@ -183,6 +183,12 @@ Each component takes any of the below provider configurations:
         # and the --config-management-plugin flag passed to argocd-app-create # command is auto-generated.
   ```
 
+  Note that in case `$dir/kargo.yaml` exists, everything read from that yaml file becomes the default values.
+
+  In other words, `kanvas` merges and overrdes settings provided via the component onto settings declared in the kargo config file.
+
+  This enables you to "offload" some or all of the `kubernetes` provider settings to an external `kargo.yaml` file for clarity.
+
 Here's a more complete example of `kanvas.yaml` that covers everything introduced so far:
 
 ```yaml
