@@ -112,7 +112,7 @@ Each component takes any of the below provider configurations:
       - name: vpc_id
         valueFrom: infra.vpc_id
   ```
-- `kubernetes` deploys the k8s app in various ways using `kargo`, with per-environment configuration for the right balance between speed and safety.
+- `kubernetes` deploys the k8s app in various ways using [kargo](https://github.com/mumoshu/kargo), with per-environment configuration for the right balance between speed and safety.
 
   The `kubernetes` provider can deploy your contained application to the K8s cluster by directly running
   `helm`, `kustomize`, `kompose`, or indirectly via `argocd`.
