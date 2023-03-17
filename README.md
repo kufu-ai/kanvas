@@ -256,7 +256,7 @@ The above configuration implies that:
 You can optionally add an `environments` field for defining two or more
 environments. Each environment can have "defaults" and "after" fields.
 
-**The "defaults" field**:
+#### The "defaults" field
 
 Each environment can have a "defaults" field for setting default values used for every component defined in the kanvas.yaml file. This helps making your multi-environment configuration DRY.
 
@@ -338,7 +338,7 @@ First, you no longer need to repeat "workspace" fields for all the components. T
 
 Second, you no longer need to duplicate whole components across environments. The more components you have, the nicer it becomes.
 
-**The "after" field**:
+#### The "after" field
 
 Each environment can be configured to be deployed only after another envionment(s).
 
@@ -356,7 +356,36 @@ environments:
   preview: {}
 ```
 
-**Example**:
+We will support a few strategies to implement this:
+
+- If you run `kanvas apply` locally, it will just apply those environments in the order of dependencies.
+- If export it to GitHub Actions, it gives you two options.
+  - The first option is to have a single pull request workflow to `kanvas apply` the environments, with intermediate ["manual approval"](https://trstringer.com/github-actions-manual-approval/) steps.
+  - The second option is to have two workflows, one for deploying the `preview` environment on each pull request, and another for deploying the `production` environment on push to the main branch. Note though, this will work only for two environments only.
+
+### Advanced: Synhetic Test
+
+You can optionally add an `tests` field for defining two or more
+tests. Each test is triggered after the prerequisites(components) are applied.
+
+The whole `kanvas apply` run fails when any of the tests failed.
+
+```
+components:
+  infra:
+    dir: tf
+    terraform:
+      target: null_resource.infra
+
+tests:
+  pinglb:
+    prober: icmp
+    targetFrom: infra.alb_endpoint
+```
+
+Under the hood, kanvas runs [blackbox-exporter](https://github.com/prometheus/blackbox_exporter) with the provided test configuration.
+
+#### Advanced Example
 
 A more complete example of the whole configuration which involves `environments`, `defaults`, and `after` are shown below for your reference.
 
