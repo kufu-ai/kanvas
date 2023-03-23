@@ -251,12 +251,40 @@ The above configuration implies that:
 - `kanvas plan` runs `terraform plan` and store the plan files up until the first unapplied terraform projects
 - `kanvas apply` runs `docker build` and `terraform apply` for all the terraform projects planned beforehand
 
+### Advanced: Synthetic Test
+
+You can optionally add an `tests` field for defining two or more
+tests. Each test is triggered after the prerequisites(components) are applied.
+
+The whole `kanvas apply` run fails when any of the tests failed.
+
+```
+components:
+  infra:
+    dir: tf
+    terraform:
+      target: null_resource.infra
+
+tests:
+  pinglb:
+    prober: icmp
+    targetFrom: infra.alb_endpoint
+```
+
+Under the hood, kanvas runs [blackbox-exporter](https://github.com/prometheus/blackbox_exporter) with the provided test configuration.
+
 ### Advanced: Environments
 
-You can optionally add an `environments` field for defining two or more
-environments. Each environment can have "defaults" and "after" fields.
+You can optionally add an `environments` field for defining two or more environments.
 
-#### The "defaults" field
+Each environment can have `defaults`, `needs`, and `approval` fields.
+
+All in all, this feature serves the following use-cases:
+
+- [Keep multi-environment deployment config DRY (`defaults`)](#multi-env-deployment-using-the-environment-defaults)
+- [Promote releases across the environments (`needs` and `approval`)](#promoting-releases-using-the-environment-needs)
+
+#### Multi-env deployment using the environment "defaults"
 
 Each environment can have a "defaults" field for setting default values used for every component defined in the kanvas.yaml file. This helps making your multi-environment configuration DRY.
 
@@ -338,7 +366,7 @@ First, you no longer need to repeat "workspace" fields for all the components. T
 
 Second, you no longer need to duplicate whole components across environments. The more components you have, the nicer it becomes.
 
-#### The "after" field
+#### Promoting releases using the environment "needs"
 
 Each environment can be configured to be deployed only after another envionment(s).
 
@@ -346,15 +374,17 @@ This is useful when you want some environment to be planned and applied only aft
 
 An example use-case for this would be to ensure changes working on the preview environment before you apply the changes to the production environment.
 
-To make an environment (say "production") depend on another (say "preview"), add an `after` field under the environment and specify dependent environment names.
+To make an environment (say "production") depend on another (say "preview"), add an `needs` field under the environment and specify dependent environment names.
 
 ```
 environments:
   production:
-    after:
+    needs:
     - preview
   preview: {}
 ```
+
+The field is intentionally given the same name as the component `needs` field, to make it clear that this is the standard way to denote dependencies for anything in `kanvas`.
 
 We will support a few strategies to implement this:
 
@@ -363,31 +393,9 @@ We will support a few strategies to implement this:
   - The first option is to have a single pull request workflow to `kanvas apply` the environments, with intermediate ["manual approval"](https://trstringer.com/github-actions-manual-approval/) steps.
   - The second option is to have two workflows, one for deploying the `preview` environment on each pull request, and another for deploying the `production` environment on push to the main branch. Note though, this will work only for two environments only.
 
-### Advanced: Synhetic Test
-
-You can optionally add an `tests` field for defining two or more
-tests. Each test is triggered after the prerequisites(components) are applied.
-
-The whole `kanvas apply` run fails when any of the tests failed.
-
-```
-components:
-  infra:
-    dir: tf
-    terraform:
-      target: null_resource.infra
-
-tests:
-  pinglb:
-    prober: icmp
-    targetFrom: infra.alb_endpoint
-```
-
-Under the hood, kanvas runs [blackbox-exporter](https://github.com/prometheus/blackbox_exporter) with the provided test configuration.
-
 #### Advanced Example
 
-A more complete example of the whole configuration which involves `environments`, `defaults`, and `after` are shown below for your reference.
+A more complete example of the whole configuration which involves `environments`, `defaults`, and `needs` are shown below for your reference.
 
 ```
 environments:
