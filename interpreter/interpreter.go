@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"kanvas"
 	"strings"
+
+	"github.com/mumoshu/kargo"
 )
 
 type WorkflowJob struct {
@@ -77,30 +79,39 @@ func (p *Interpreter) parallel(names []string, f func(job *WorkflowJob) error) e
 	return nil
 }
 
-func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, cmd []string) error {
-	var c []string
+func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, cmds []kargo.Cmd) error {
+	for _, c := range cmds {
+		if err := p.runCmd(j, c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-	c = append(c, cmd...)
-
-	j.Driver.Args.Visit(func(str string) {
-		c = append(c, str)
-	}, func(out string) {
+func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
+	args, err := cmd.Args.Collect(func(out string) (string, error) {
 		jobOutput := strings.SplitN(out, ".", 1)
 		jobName := jobOutput[0]
 		outName := jobOutput[1]
 
 		job, ok := p.WorkflowJobs[jobName]
 		if !ok {
-			panic(fmt.Errorf("job %q does not exist", jobName))
+			return "", fmt.Errorf("job %q does not exist", jobName)
 		}
 
 		val, ok := job.Outputs[outName]
 		if !ok {
-			panic(fmt.Errorf("output %q does not exist", outName))
+			return "", fmt.Errorf("output %q does not exist", outName)
 		}
 
-		c = append(c, val)
+		return val, nil
 	})
+	if err != nil {
+		return err
+	}
+
+	c := []string{cmd.Name}
+	c = append(c, args...)
 
 	return p.runtime.Exec(j.Dir, c)
 }

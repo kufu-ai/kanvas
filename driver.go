@@ -4,46 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strconv"
+	"strings"
+
+	"github.com/mumoshu/kargo"
 )
 
 type Driver struct {
-	Diff       []string
-	Apply      []string
+	Diff       []kargo.Cmd
+	Apply      []kargo.Cmd
 	Output     func(format string) []string
 	OutputFunc func(*Runtime, map[string]string) error
 	Dir        string
-
-	Args *Args
-}
-
-type Args struct {
-	underlying []interface{}
-}
-
-func (a *Args) AddString(v string) {
-	a.underlying = append(a.underlying, v)
-}
-
-func (a *Args) AddValueFromOutput(ref string) {
-	a.underlying = append(a.underlying, DynArg{FromOutput: ref})
-}
-
-func (a *Args) Visit(str func(string), out func(string)) {
-	for _, x := range a.underlying {
-		switch a := x.(type) {
-		case string:
-			str(a)
-		case DynArg:
-			out(a.FromOutput)
-		default:
-			panic(fmt.Sprintf("unexpected type(%T) of item: %q", a, a))
-		}
-	}
-}
-
-type DynArg struct {
-	FromOutput string
 }
 
 func newDriver(id, dir string, c Component) (*Driver, error) {
@@ -58,12 +31,15 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 	if c.Docker != nil {
 		// TODO Append some unique-ish ID of the to-be-produced image
 		image := c.Docker.Image
+		dockerfile := c.Docker.File
+		if dockerfile == "" {
+			dockerfile = "Dockerfile"
+		}
 		return &Driver{
 			Dir:    dir,
-			Diff:   []string{"docker", "build", "-t", image, "-f", c.Docker.File, dir},
-			Apply:  []string{"docker", "push", image},
+			Diff:   []kargo.Cmd{{Name: "docker", Args: kargo.NewArgs("build", "-t", image, "-f", dockerfile), Dir: dir}},
+			Apply:  []kargo.Cmd{{Name: "docker", Args: kargo.NewArgs("push", image)}},
 			Output: output,
-			Args:   &Args{},
 			OutputFunc: func(r *Runtime, o map[string]string) error {
 				var buf bytes.Buffer
 				if err := r.Exec(dir, []string{"docker", "inspect", "--format={{index .RepoDigests 0}}"}, ExecStdout(&buf)); err != nil {
@@ -80,18 +56,17 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 			args = []string{"-target", c.Terraform.Target}
 		}
 
-		dynArgs := &Args{}
+		dynArgs := &kargo.Args{}
 		for _, v := range c.Terraform.Vars {
-			dynArgs.AddString("-var")
-			dynArgs.AddValueFromOutput(v.ValueFrom)
+			dynArgs.Append("-var")
+			dynArgs.AppendValueFromOutput(v.ValueFrom)
 		}
 
 		return &Driver{
 			Dir:    dir,
-			Diff:   append([]string{"terraform", "plan"}, args...),
-			Apply:  append([]string{"terraform", "apply"}, args...),
+			Diff:   []kargo.Cmd{{Name: "terraform", Args: kargo.NewArgs("plan", args, dynArgs)}},
+			Apply:  []kargo.Cmd{{Name: "terraform", Args: kargo.NewArgs("apply", args, dynArgs)}},
 			Output: output,
-			Args:   dynArgs,
 			OutputFunc: func(r *Runtime, o map[string]string) error {
 				var buf bytes.Buffer
 				if err := r.Exec(dir, []string{"terraform", "output", "-json"}, ExecStdout(&buf)); err != nil {
@@ -128,6 +103,43 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 				}
 
 				o["_raw"] = buf.String()
+				return nil
+			},
+		}, nil
+	} else if c.Kubernetes != nil {
+		var (
+			name = c.Kubernetes.Name
+		)
+		if name == "" {
+			name = filepath.Base(c.Dir)
+		}
+
+		c.Kubernetes.Name = name
+		c.Kubernetes.Path = c.Dir
+
+		g := &kargo.Generator{
+			GetValue: func(key string) (string, error) {
+				return strings.ToUpper(key), nil
+			},
+			TailLogs: false,
+		}
+
+		diff, err := g.ExecCmds(&c.Kubernetes.Config, kargo.Plan)
+		if err != nil {
+			return nil, fmt.Errorf("generating plan commands: %w", err)
+		}
+
+		apply, err := g.ExecCmds(&c.Kubernetes.Config, kargo.Apply)
+		if err != nil {
+			return nil, fmt.Errorf("generating apply commands: %w", err)
+		}
+
+		return &Driver{
+			Dir:    dir,
+			Diff:   diff,
+			Apply:  apply,
+			Output: output,
+			OutputFunc: func(r *Runtime, o map[string]string) error {
 				return nil
 			},
 		}, nil

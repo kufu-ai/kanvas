@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/goccy/go-yaml"
+	"github.com/mumoshu/kargo"
 )
 
 type Component struct {
@@ -12,6 +13,7 @@ type Component struct {
 	Needs      []string             `yaml:"needs"`
 	Docker     *Docker              `yaml:"docker,omitempty"`
 	Terraform  *Terraform           `yaml:"terraform,omitempty"`
+	Kubernetes *Kubernetes          `yaml:"kubernetes,omitempty"`
 }
 
 type Docker struct {
@@ -27,6 +29,10 @@ type Terraform struct {
 type Var struct {
 	Name      string `yaml:"name"`
 	ValueFrom string `yaml:"valueFrom"`
+}
+
+type Kubernetes struct {
+	kargo.Config `yaml:",inline"`
 }
 
 func New(path string) (*Component, error) {

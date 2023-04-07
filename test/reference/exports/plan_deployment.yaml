@@ -18,7 +18,7 @@ jobs:
       with:
         fetch-depth: 0
     - id: run
-      run: docker build -t davinci-std/example:myownprefix- -f  /containerimages/app
+      run: cd /containerimages/app && docker build -t davinci-std/example:myownprefix- -f Dockerfile
     - id: product1-appimage
       run: kanvas output -t /product1/appimage -f githubactions
   product1-argocd:

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/goccy/go-yaml"
+	"github.com/mumoshu/kargo"
 )
 
 const (
@@ -74,25 +75,28 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 
 		name = id(name)
 
-		job.Driver.Args.Visit(func(str string) {
-		}, func(out string) {
-			jobAndOutput := strings.SplitN(out, ".", 2)
-			if len(jobAndOutput) != 2 {
-				// TODO make this error instead
-				panic(fmt.Errorf("Could not find dot(.) within %q", out))
-			}
-			var jobName string
-			if j := jobAndOutput[0]; j[0] == '/' {
-				jobName = id(j)
-			} else {
-				fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
-				jobName = id(fqn)
-			}
-			if _, ok := outputs[jobName]; !ok {
-				outputs[jobName] = map[string]string{}
-			}
-			outputs[jobName][jobAndOutput[1]] = fmt.Sprintf("${{ steps.%s.outputs.%s }}", step, jobAndOutput[1])
-		})
+		for _, c := range job.Driver.Diff {
+			c.Args.Visit(func(str string) {
+			}, func(out string) {
+				jobAndOutput := strings.SplitN(out, ".", 2)
+				if len(jobAndOutput) != 2 {
+					// TODO make this error instead
+					panic(fmt.Errorf("Could not find dot(.) within %q", out))
+				}
+				var jobName string
+				if j := jobAndOutput[0]; j[0] == '/' {
+					jobName = id(j)
+				} else {
+					fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
+					jobName = id(fqn)
+				}
+				if _, ok := outputs[jobName]; !ok {
+					outputs[jobName] = map[string]string{}
+				}
+				outputs[jobName][jobAndOutput[1]] = fmt.Sprintf("${{ steps.%s.outputs.%s }}", step, jobAndOutput[1])
+			}, func(in kargo.KargoValueProvider) {
+			})
+		}
 	}
 
 	for name, job := range e.wf.WorkflowJobs {
@@ -107,24 +111,39 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 			needs = append(needs, id(n))
 		}
 
-		var cmd []string
-		cmd = append(cmd, job.Driver.Diff...)
-		job.Driver.Args.Visit(func(str string) {
-			cmd = append(cmd, str)
-		}, func(out string) {
-			jobAndOutput := strings.SplitN(out, ".", 2)
-			if len(jobAndOutput) != 2 {
-				// TODO make this error instead
-				panic(fmt.Errorf("could not find dot(.) within %q", out))
+		steps := []actionsStep{
+			stepCheckout(),
+		}
+
+		for i, cmd := range job.Driver.Diff {
+			stepId := fmt.Sprintf("run%d", i)
+			if len(job.Driver.Diff) == 1 {
+				stepId = "run"
 			}
-			var jobName string
-			if j := jobAndOutput[0]; j[0] == '/' {
-				jobName = id(j)
-			} else {
-				fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
-				jobName = id(fqn)
-			}
-			cmd = append(cmd, fmt.Sprintf("${{ needs.%s.outputs.%s }}", jobName, jobAndOutput[1]))
+			steps = append(steps, stepRun(
+				stepId,
+				cmd,
+				func(out string) (string, error) {
+					jobAndOutput := strings.SplitN(out, ".", 2)
+					if len(jobAndOutput) != 2 {
+						// TODO make this error instead
+						panic(fmt.Errorf("could not find dot(.) within %q", out))
+					}
+					var jobName string
+					if j := jobAndOutput[0]; j[0] == '/' {
+						jobName = id(j)
+					} else {
+						fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
+						jobName = id(fqn)
+					}
+					return fmt.Sprintf("${{ needs.%s.outputs.%s }}", jobName, jobAndOutput[1]), nil
+				},
+			))
+		}
+
+		steps = append(steps, actionsStep{
+			ID:  name,
+			Run: strings.Join(job.Driver.Output(FormatGitHubActions), " "),
 		})
 
 		o := outputs[name]
@@ -135,11 +154,7 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 			},
 			Outputs: o,
 			Needs:   needs,
-			Steps: []actionsStep{
-				stepCheckout(),
-				stepRun("run", cmd),
-				stepRun(name, job.Driver.Output(FormatGitHubActions)),
-			},
+			Steps:   steps,
 		}
 
 		w.AddJob(name, *j)
@@ -199,9 +214,15 @@ func stepCheckout() actionsStep {
 	}
 }
 
-func stepRun(id string, cmd []string) actionsStep {
+func stepRun(id string, cmd kargo.Cmd, get func(string) (string, error)) actionsStep {
+	run := fmt.Sprintf("%s %s", cmd.Name, strings.Join(cmd.Args.MustCollect(get), " "))
+
+	if cmd.Dir != "" {
+		run = fmt.Sprintf("cd %s && %s", cmd.Dir, run)
+	}
+
 	return actionsStep{
 		ID:  id,
-		Run: strings.Join(cmd, " "),
+		Run: run,
 	}
 }
