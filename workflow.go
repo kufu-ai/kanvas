@@ -9,6 +9,8 @@ type Workflow struct {
 	Entry        []string
 	WorkflowJobs map[string]*WorkflowJob
 	Dir          string
+
+	deps map[string][]string
 }
 
 type WorkflowJob struct {
@@ -26,13 +28,28 @@ func NewWorkflow(config Component) (*Workflow, error) {
 	wf := &Workflow{
 		WorkflowJobs: map[string]*WorkflowJob{},
 		Dir:          dir,
+		deps:         make(map[string][]string),
 	}
 
-	if err := wf.load("", dir, config); err != nil {
+	if err := wf.Load("", dir, config); err != nil {
 		return nil, err
 	}
 
 	return wf, nil
+}
+
+func (wf *Workflow) Load(path, baseDir string, config Component) error {
+	if err := wf.load(path, baseDir, config); err != nil {
+		return err
+	}
+
+	levels, err := topologicalSort(wf.deps)
+	if err != nil {
+		return err
+	}
+	wf.Entry = levels[0]
+
+	return nil
 }
 
 func (wf *Workflow) load(path, baseDir string, config Component) error {
@@ -66,6 +83,9 @@ func (wf *Workflow) load(path, baseDir string, config Component) error {
 		if err := wf.load(subPath, dir, c); err != nil {
 			return err
 		}
+
+		wf.deps[subPath] = needs
 	}
+
 	return nil
 }

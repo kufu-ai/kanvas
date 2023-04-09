@@ -143,6 +143,16 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 				return nil
 			},
 		}, nil
+	} else {
+		return &Driver{
+			Dir:    dir,
+			Diff:   []kargo.Cmd{},
+			Apply:  []kargo.Cmd{},
+			Output: output,
+			OutputFunc: func(r *Runtime, o map[string]string) error {
+				return nil
+			},
+		}, nil
 	}
 
 	if len(c.Components) == 0 {
