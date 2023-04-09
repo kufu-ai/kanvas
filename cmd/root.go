@@ -25,6 +25,7 @@ func Root() *cobra.Command {
 		Use:   "diff",
 		Short: "Shows the diff between the desired state and the current state",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
 			return run(cmd, configFile, func(a *app.App) error {
 				return a.Diff()
 			})
@@ -36,6 +37,7 @@ func Root() *cobra.Command {
 		Use:   "apply",
 		Short: "Build the container image(s) if any and runs terraform-apply command(s) to deploy changes",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
 			return run(cmd, configFile, func(a *app.App) error {
 				return a.Apply()
 			})
