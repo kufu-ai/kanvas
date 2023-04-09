@@ -4,9 +4,11 @@ import (
 	"kanvas"
 	"kanvas/interpreter"
 	"kanvas/plugin"
+	"path/filepath"
 )
 
 type App struct {
+	WorkDir string
 	Config  kanvas.Component
 	Runtime *kanvas.Runtime
 }
@@ -20,15 +22,20 @@ func New(path string) (*App, error) {
 	r := kanvas.NewRuntime()
 
 	return &App{
+		WorkDir: filepath.Dir(path),
 		Config:  *c,
 		Runtime: r,
 	}, nil
 
 }
 
+func (a *App) newWorkflow() (*kanvas.Workflow, error) {
+	return kanvas.NewWorkflow(a.WorkDir, a.Config)
+}
+
 // Diff shows the diff between the desired state and the current state
 func (a *App) Diff() error {
-	wf, err := kanvas.NewWorkflow(a.Config)
+	wf, err := a.newWorkflow()
 	if err != nil {
 		return err
 	}
@@ -40,7 +47,7 @@ func (a *App) Diff() error {
 
 // Apply builds the container image(s) if any and runs terraform-apply command(s) to deploy changes
 func (a *App) Apply() error {
-	wf, err := kanvas.NewWorkflow(a.Config)
+	wf, err := a.newWorkflow()
 	if err != nil {
 		return err
 	}
@@ -51,7 +58,7 @@ func (a *App) Apply() error {
 }
 
 func (a *App) Export(format, dir, kanvasContainerImage string) error {
-	wf, err := kanvas.NewWorkflow(a.Config)
+	wf, err := a.newWorkflow()
 	if err != nil {
 		return err
 	}
@@ -62,7 +69,7 @@ func (a *App) Export(format, dir, kanvasContainerImage string) error {
 }
 
 func (a *App) Output(format, target string) error {
-	wf, err := kanvas.NewWorkflow(a.Config)
+	wf, err := a.newWorkflow()
 	if err != nil {
 		return err
 	}

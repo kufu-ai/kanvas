@@ -1,7 +1,6 @@
 package kanvas
 
 import (
-	"os"
 	"path/filepath"
 )
 
@@ -19,19 +18,14 @@ type WorkflowJob struct {
 	Driver *Driver
 }
 
-func NewWorkflow(config Component) (*Workflow, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-
+func NewWorkflow(workDir string, config Component) (*Workflow, error) {
 	wf := &Workflow{
 		WorkflowJobs: map[string]*WorkflowJob{},
-		Dir:          dir,
+		Dir:          workDir,
 		deps:         make(map[string][]string),
 	}
 
-	if err := wf.Load("", dir, config); err != nil {
+	if err := wf.Load("", workDir, config); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +59,9 @@ func (wf *Workflow) load(path, baseDir string, config Component) error {
 		if dir == "" {
 			dir = name
 		}
-		if dir[0] != '/' {
+		if dir[0] == '/' {
+			dir = filepath.Join(wf.Dir, dir)
+		} else {
 			dir = filepath.Join(baseDir, dir)
 		}
 
