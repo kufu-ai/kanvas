@@ -75,27 +75,29 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 
 		name = id(name)
 
-		for _, c := range job.Driver.Diff {
-			c.Args.Visit(func(str string) {
-			}, func(out string) {
-				jobAndOutput := strings.SplitN(out, ".", 2)
-				if len(jobAndOutput) != 2 {
-					// TODO make this error instead
-					panic(fmt.Errorf("Could not find dot(.) within %q", out))
-				}
-				var jobName string
-				if j := jobAndOutput[0]; j[0] == '/' {
-					jobName = id(j)
-				} else {
-					fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
-					jobName = id(fqn)
-				}
-				if _, ok := outputs[jobName]; !ok {
-					outputs[jobName] = map[string]string{}
-				}
-				outputs[jobName][jobAndOutput[1]] = fmt.Sprintf("${{ steps.%s.outputs.%s }}", step, jobAndOutput[1])
-			}, func(in kargo.KargoValueProvider) {
-			})
+		for _, step := range job.Driver.Diff {
+			for _, c := range step.Run {
+				c.Args.Visit(func(str string) {
+				}, func(out string) {
+					jobAndOutput := strings.SplitN(out, ".", 2)
+					if len(jobAndOutput) != 2 {
+						// TODO make this error instead
+						panic(fmt.Errorf("Could not find dot(.) within %q", out))
+					}
+					var jobName string
+					if j := jobAndOutput[0]; j[0] == '/' {
+						jobName = id(j)
+					} else {
+						fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
+						jobName = id(fqn)
+					}
+					if _, ok := outputs[jobName]; !ok {
+						outputs[jobName] = map[string]string{}
+					}
+					outputs[jobName][jobAndOutput[1]] = fmt.Sprintf("${{ steps.%s.outputs.%s }}", step, jobAndOutput[1])
+				}, func(in kargo.KargoValueProvider) {
+				})
+			}
 		}
 	}
 
@@ -115,30 +117,32 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 			stepCheckout(),
 		}
 
-		for i, cmd := range job.Driver.Diff {
-			stepId := fmt.Sprintf("run%d", i)
-			if len(job.Driver.Diff) == 1 {
-				stepId = "run"
+		for i, s := range job.Driver.Diff {
+			for _, cmd := range s.Run {
+				stepId := fmt.Sprintf("run%d", i)
+				if len(job.Driver.Diff) == 1 {
+					stepId = "run"
+				}
+				steps = append(steps, stepRun(
+					stepId,
+					cmd,
+					func(out string) (string, error) {
+						jobAndOutput := strings.SplitN(out, ".", 2)
+						if len(jobAndOutput) != 2 {
+							// TODO make this error instead
+							panic(fmt.Errorf("could not find dot(.) within %q", out))
+						}
+						var jobName string
+						if j := jobAndOutput[0]; j[0] == '/' {
+							jobName = id(j)
+						} else {
+							fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
+							jobName = id(fqn)
+						}
+						return fmt.Sprintf("${{ needs.%s.outputs.%s }}", jobName, jobAndOutput[1]), nil
+					},
+				))
 			}
-			steps = append(steps, stepRun(
-				stepId,
-				cmd,
-				func(out string) (string, error) {
-					jobAndOutput := strings.SplitN(out, ".", 2)
-					if len(jobAndOutput) != 2 {
-						// TODO make this error instead
-						panic(fmt.Errorf("could not find dot(.) within %q", out))
-					}
-					var jobName string
-					if j := jobAndOutput[0]; j[0] == '/' {
-						jobName = id(j)
-					} else {
-						fqn := filepath.Join(strings.ReplaceAll(name, "-", "/"), "..", j)
-						jobName = id(fqn)
-					}
-					return fmt.Sprintf("${{ needs.%s.outputs.%s }}", jobName, jobAndOutput[1]), nil
-				},
-			))
 		}
 
 		steps = append(steps, actionsStep{

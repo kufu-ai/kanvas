@@ -83,10 +83,25 @@ func (p *Interpreter) parallel(names []string, f func(job *WorkflowJob) error) e
 	return nil
 }
 
-func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, cmds []kargo.Cmd) error {
-	for _, c := range cmds {
-		if err := p.runCmd(j, c); err != nil {
-			return err
+func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, steps []kanvas.Step) error {
+	outputs := map[string]string{}
+	for _, step := range steps {
+		if step.IfOutputEq.Key != "" {
+			if step.IfOutputEq.Value != outputs[step.IfOutputEq.Key] {
+				continue
+			}
+		}
+
+		for _, c := range step.Run {
+			if err := p.runCmd(j, c); err != nil {
+				return err
+			}
+		}
+
+		if step.OutputFunc != nil {
+			if err := step.OutputFunc(p.runtime, outputs); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -117,8 +132,13 @@ func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
 	c := []string{cmd.Name}
 	c = append(c, args...)
 
-	if err := p.runtime.Exec(j.Dir, c); err != nil {
-		return fmt.Errorf("executing command %q: %w", cmd.Name, err)
+	dir := cmd.Dir
+	if dir == "" {
+		dir = j.Dir
+	}
+
+	if err := p.runtime.Exec(dir, c); err != nil {
+		return fmt.Errorf("executing command %q in %s: %w", cmd.Name, dir, err)
 	}
 
 	return nil

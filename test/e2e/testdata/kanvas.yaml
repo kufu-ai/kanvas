@@ -2,8 +2,9 @@ components:
   product1:
     components:
       appimage:
-        dir: /containerimages/app
+        dir: /
         docker:
+          file: containerimages/app/Dockerfile
           image: "davinci-std/example:myownprefix-"
       base:
         dir: /tf2
