@@ -35,10 +35,25 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 		if dockerfile == "" {
 			dockerfile = "Dockerfile"
 		}
+		diffCmd := kargo.Cmd{
+			Name: "docker",
+			Args: kargo.NewArgs("build", "-t", image, "-f", dockerfile, "."),
+			Dir:  dir,
+		}
+		applyCmd := kargo.Cmd{
+			Name: "docker",
+			Args: kargo.NewArgs("push", image),
+		}
+
 		return &Driver{
-			Dir:    dir,
-			Diff:   []kargo.Cmd{{Name: "docker", Args: kargo.NewArgs("build", "-t", image, "-f", dockerfile), Dir: dir}},
-			Apply:  []kargo.Cmd{{Name: "docker", Args: kargo.NewArgs("push", image)}},
+			Dir: dir,
+			Diff: []kargo.Cmd{
+				diffCmd,
+			},
+			Apply: []kargo.Cmd{
+				diffCmd,
+				applyCmd,
+			},
 			Output: output,
 			OutputFunc: func(r *Runtime, o map[string]string) error {
 				var buf bytes.Buffer
