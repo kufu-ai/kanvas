@@ -49,10 +49,14 @@ func (p *Interpreter) run(name string, f func(job *WorkflowJob) error) error {
 	}
 
 	if err := p.parallel(job.Needs, f); err != nil {
-		return err
+		return fmt.Errorf("%q's dependencies %v: %w", name, job.Needs, err)
 	}
 
-	return f(job)
+	if err := f(job); err != nil {
+		return fmt.Errorf("%q: %w", name, err)
+	}
+
+	return nil
 }
 
 func (p *Interpreter) parallel(names []string, f func(job *WorkflowJob) error) error {
@@ -107,13 +111,17 @@ func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
 		return val, nil
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("collecting args for command %q: %w", cmd.Name, err)
 	}
 
 	c := []string{cmd.Name}
 	c = append(c, args...)
 
-	return p.runtime.Exec(j.Dir, c)
+	if err := p.runtime.Exec(j.Dir, c); err != nil {
+		return fmt.Errorf("executing command %q: %w", cmd.Name, err)
+	}
+
+	return nil
 }
 
 func (p *Interpreter) Apply() error {

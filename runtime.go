@@ -2,6 +2,7 @@ package kanvas
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os/exec"
 )
@@ -27,5 +28,10 @@ func (r *Runtime) Exec(dir string, cmd []string, opts ...ExecOption) error {
 	for _, o := range opts {
 		o(c)
 	}
-	return c.Run()
+	out, err := c.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("executing %q: %w: %s", cmd, err, out)
+	}
+
+	return nil
 }
