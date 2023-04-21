@@ -1,6 +1,7 @@
 package kanvas
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -28,9 +29,18 @@ func (r *Runtime) Exec(dir string, cmd []string, opts ...ExecOption) error {
 	for _, o := range opts {
 		o(c)
 	}
-	out, err := c.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("executing %q: %w: %s", cmd, err, out)
+	if c.Stdout != nil {
+		var stderr bytes.Buffer
+
+		c.Stderr = &stderr
+		if err := c.Run(); err != nil {
+			return fmt.Errorf("executing %q: %w: %s", cmd, err, stderr.String())
+		}
+	} else {
+		out, err := c.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("executing %q: %w: %s", cmd, err, out)
+		}
 	}
 
 	return nil

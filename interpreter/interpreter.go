@@ -9,6 +9,7 @@ import (
 )
 
 type WorkflowJob struct {
+	ID      string
 	Outputs map[string]string
 	Ran     bool
 
@@ -19,6 +20,8 @@ type Interpreter struct {
 	Workflow     *kanvas.Workflow
 	WorkflowJobs map[string]*WorkflowJob
 	runtime      *kanvas.Runtime
+
+	EnableParallel bool
 }
 
 func New(wf *kanvas.Workflow, r *kanvas.Runtime) *Interpreter {
@@ -26,6 +29,7 @@ func New(wf *kanvas.Workflow, r *kanvas.Runtime) *Interpreter {
 	for k, v := range wf.WorkflowJobs {
 		v := v
 		wjs[k] = &WorkflowJob{
+			ID:          k,
 			Outputs:     make(map[string]string),
 			WorkflowJob: v,
 		}
@@ -39,17 +43,19 @@ func New(wf *kanvas.Workflow, r *kanvas.Runtime) *Interpreter {
 }
 
 func (p *Interpreter) Run(f func(job *WorkflowJob) error) error {
-	return p.parallel(p.Workflow.Entry, f)
+	for _, phase := range p.Workflow.Plan {
+		if err := p.parallel(phase, f); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (p *Interpreter) run(name string, f func(job *WorkflowJob) error) error {
 	job, ok := p.WorkflowJobs[name]
 	if !ok {
 		return fmt.Errorf("component %q is not defined", name)
-	}
-
-	if err := p.parallel(job.Needs, f); err != nil {
-		return fmt.Errorf("%q's dependencies %v: %w", name, job.Needs, err)
 	}
 
 	if err := f(job); err != nil {
@@ -62,18 +68,24 @@ func (p *Interpreter) run(name string, f func(job *WorkflowJob) error) error {
 func (p *Interpreter) parallel(names []string, f func(job *WorkflowJob) error) error {
 	var (
 		errs  []error
-		errCh = make(chan error)
+		errCh = make(chan error, len(names))
 	)
 
 	for _, n := range names {
 		n := n
-		go func() {
+		if p.EnableParallel {
+			go func() {
+				errCh <- p.run(n, f)
+			}()
+		} else {
 			errCh <- p.run(n, f)
-		}()
+		}
 	}
 
 	for i := 0; i < len(names); i++ {
-		errs = append(errs, <-errCh)
+		if err := <-errCh; err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if len(errs) > 0 {
@@ -104,23 +116,34 @@ func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, steps []kanvas.Step) erro
 			}
 		}
 	}
+
+	if j.Driver.OutputFunc != nil {
+		if err := j.Driver.OutputFunc(p.runtime, outputs); err != nil {
+			return err
+		}
+	}
+
+	j.Outputs = outputs
+
 	return nil
 }
 
 func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
 	args, err := cmd.Args.Collect(func(out string) (string, error) {
-		jobOutput := strings.SplitN(out, ".", 1)
+		jobOutput := strings.SplitN(out, ".", 2)
 		jobName := jobOutput[0]
 		outName := jobOutput[1]
 
-		job, ok := p.WorkflowJobs[jobName]
+		fullJobName := kanvas.SiblingID(j.ID, jobName)
+
+		job, ok := p.WorkflowJobs[fullJobName]
 		if !ok {
 			return "", fmt.Errorf("job %q does not exist", jobName)
 		}
 
 		val, ok := job.Outputs[outName]
 		if !ok {
-			return "", fmt.Errorf("output %q does not exist", outName)
+			return "", fmt.Errorf("output %q.%q does not exist", jobName, outName)
 		}
 
 		return val, nil

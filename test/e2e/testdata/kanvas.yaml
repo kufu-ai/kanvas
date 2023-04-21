@@ -5,7 +5,7 @@ components:
         dir: /
         docker:
           file: containerimages/app/Dockerfile
-          image: "davinci-std/example:myownprefix-"
+          image: "mumoshu/example:myownprefix-"
       base:
         dir: /tf2
         needs:

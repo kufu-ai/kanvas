@@ -60,7 +60,7 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 		)
 		dockerBuildxPush := cmd.New(
 			"docker",
-			cmd.Args("build", "--push", "--platform", "linux/amd64", "-t", image, "-f", dockerfile, "."),
+			cmd.Args("build", "--load", "--platform", "linux/amd64", "-t", image, "-f", dockerfile, "."),
 		)
 		dockerBuildXCheckAvailability := Step(Task{
 			OutputFunc: func(r *Runtime, o map[string]string) error {
@@ -104,7 +104,7 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 			Output: output,
 			OutputFunc: func(r *Runtime, o map[string]string) error {
 				var buf bytes.Buffer
-				if err := r.Exec(dir, []string{"docker", "inspect", "--format={{index .RepoDigests 0}}"}, ExecStdout(&buf)); err != nil {
+				if err := r.Exec(dir, []string{"docker", "inspect", "--format={{.ID}}", image}, ExecStdout(&buf)); err != nil {
 					return fmt.Errorf("docker-inspect failed: %w", err)
 				}
 				o["id"] = buf.String()
