@@ -78,11 +78,11 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 		for _, step := range job.Driver.Diff {
 			for _, c := range step.Run {
 				c.Args.Visit(func(str string) {
-				}, func(out string) {
-					jobAndOutput := strings.SplitN(out, ".", 2)
+				}, func(a kargo.DynArg) {
+					jobAndOutput := strings.SplitN(a.FromOutput, ".", 2)
 					if len(jobAndOutput) != 2 {
 						// TODO make this error instead
-						panic(fmt.Errorf("Could not find dot(.) within %q", out))
+						panic(fmt.Errorf("Could not find dot(.) within %q", a.FromOutput))
 					}
 					var jobName string
 					if j := jobAndOutput[0]; j[0] == '/' {

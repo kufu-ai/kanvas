@@ -121,7 +121,10 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 		dynArgs := &kargo.Args{}
 		for _, v := range c.Terraform.Vars {
 			dynArgs.Append("-var")
-			dynArgs.AppendValueFromOutput(v.ValueFrom)
+			dynArgs.AppendValueFromOutputWithPrefix(
+				fmt.Sprintf("%s=", v.Name),
+				v.ValueFrom,
+			)
 		}
 
 		return &Driver{
