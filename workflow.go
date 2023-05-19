@@ -84,12 +84,13 @@ func (wf *Workflow) load(path, baseDir string, config Component) error {
 
 		dir := c.Dir
 		if dir == "" {
-			dir = name
-		}
-		if dir[0] == '/' {
-			dir = filepath.Join(wf.Dir, dir)
+			dir = baseDir
 		} else {
-			dir = filepath.Join(baseDir, dir)
+			if dir[0] == '/' {
+				dir = filepath.Join(wf.Dir, dir)
+			} else {
+				dir = filepath.Join(baseDir, dir)
+			}
 		}
 
 		driver, err := newDriver(subPath, dir, c)

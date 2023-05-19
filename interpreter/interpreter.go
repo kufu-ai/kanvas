@@ -5,6 +5,7 @@ import (
 	"kanvas"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/mumoshu/kargo"
 )
 
@@ -59,7 +60,7 @@ func (p *Interpreter) run(name string, f func(job *WorkflowJob) error) error {
 	}
 
 	if err := f(job); err != nil {
-		return fmt.Errorf("%q: %w", name, err)
+		return fmt.Errorf("component %q: %w", name, err)
 	}
 
 	return nil
@@ -67,7 +68,7 @@ func (p *Interpreter) run(name string, f func(job *WorkflowJob) error) error {
 
 func (p *Interpreter) parallel(names []string, f func(job *WorkflowJob) error) error {
 	var (
-		errs  []error
+		errs  error
 		errCh = make(chan error, len(names))
 	)
 
@@ -84,18 +85,18 @@ func (p *Interpreter) parallel(names []string, f func(job *WorkflowJob) error) e
 
 	for i := 0; i < len(names); i++ {
 		if err := <-errCh; err != nil {
-			errs = append(errs, err)
+			errs = multierror.Append(errs, err)
 		}
 	}
 
-	if len(errs) > 0 {
-		return fmt.Errorf("failed resolving dependencies: %v", errs)
+	if errs != nil {
+		return fmt.Errorf("failed running component group %v: %s", names, errs)
 	}
 
 	return nil
 }
 
-func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, steps []kanvas.Step) error {
+func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, op kanvas.Op, steps []kanvas.Step) error {
 	outputs := map[string]string{}
 	for _, step := range steps {
 		if step.IfOutputEq.Key != "" {
@@ -118,7 +119,7 @@ func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, steps []kanvas.Step) erro
 	}
 
 	if j.Driver.OutputFunc != nil {
-		if err := j.Driver.OutputFunc(p.runtime, outputs); err != nil {
+		if err := j.Driver.OutputFunc(p.runtime, op, outputs); err != nil {
 			return err
 		}
 	}
@@ -131,6 +132,9 @@ func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, steps []kanvas.Step) erro
 func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
 	args, err := cmd.Args.Collect(func(out string) (string, error) {
 		jobOutput := strings.SplitN(out, ".", 2)
+		if len(jobOutput) != 2 {
+			return "", fmt.Errorf("could not find dot(.) within %q", out)
+		}
 		jobName := jobOutput[0]
 		outName := jobOutput[1]
 
@@ -143,13 +147,13 @@ func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
 
 		val, ok := job.Outputs[outName]
 		if !ok {
-			return "", fmt.Errorf("output %q.%q does not exist", jobName, outName)
+			return "", fmt.Errorf(`output "%s.%s" does not exist. Ensure that %q outputs %q`, jobName, outName, jobName, outName)
 		}
 
 		return val, nil
 	})
 	if err != nil {
-		return fmt.Errorf("collecting args for command %q: %w", cmd.Name, err)
+		return fmt.Errorf("while collecting args for command %q: %w", cmd.Name, err)
 	}
 
 	c := []string{cmd.Name}
@@ -184,7 +188,7 @@ func (p *Interpreter) diffJob(j *WorkflowJob) error {
 		return nil
 	}
 
-	if err := p.runWithExtraArgs(j, j.Driver.Diff); err != nil {
+	if err := p.runWithExtraArgs(j, kanvas.Diff, j.Driver.Diff); err != nil {
 		return err
 	}
 
@@ -198,7 +202,7 @@ func (p *Interpreter) applyJob(j *WorkflowJob) error {
 		return nil
 	}
 
-	if err := p.runWithExtraArgs(j, j.Driver.Apply); err != nil {
+	if err := p.runWithExtraArgs(j, kanvas.Apply, j.Driver.Apply); err != nil {
 		return err
 	}
 

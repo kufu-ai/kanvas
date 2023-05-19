@@ -439,6 +439,29 @@ components:
     - image
 ```
 
+## FAQ
+
+- Why not use `terraform apply -target` for multi-phase terraform apply?
+  That's because `terraform` itself wanrs not to use it routinely. Here's the
+  excerpt from the terraform warning message that tells it:
+
+  ```
+  Note that the -target option is not suitable for routine use, and is
+│ provided only for exceptional situations such as recovering from errors or
+│ mistakes, or when Terraform specifically suggests to use it as part of an
+│ error message.
+  ```
+
+  `kanvas`, on the other hand, is build from ground-up to natively connect
+  various jobs powered by `docker`, `terraform`, `argocd`, `kubectl`, etc and
+  there is no technical limit of sticking with `-target` for applying a set
+  terraform configurations in sequence. You don't need to rely on `-target`,
+  nor aggregate many terraform resources into a single Terraform project
+  for the sake of completeness and clarity.
+
+  Instead, do split your Terraform projects into layers, and write a single
+  `kanvas.yaml` for glueing them up.
+
 ## Roadmap
 
 Here's the preliminary list of roadmap items to be implemented:

@@ -8,6 +8,8 @@ import (
 )
 
 type Component struct {
+	// Dir is the directory to be chdir'ed before running the commands
+	// If empty, this defaults to the base dir, which is where kanvas.yaml is located.
 	Dir        string               `yaml:"dir"`
 	Components map[string]Component `yaml:"components"`
 	Needs      []string             `yaml:"needs"`
@@ -29,6 +31,7 @@ type Terraform struct {
 type Var struct {
 	Name      string `yaml:"name"`
 	ValueFrom string `yaml:"valueFrom"`
+	Value     string `yaml:"value"`
 }
 
 type Kubernetes struct {

@@ -7,6 +7,16 @@ on:
     - "**.md"
     - "**/docs/**"
 jobs:
+  product1:
+    runs_on: ubuntu-latest
+    container:
+      image: kanvas:example
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - id: out
+      run: kanvas output -t product1 -f githubactions
   product1-appimage:
     runs_on: ubuntu-latest
     container:
@@ -17,9 +27,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - id: run
-      run: cd /containerimages/app && docker build -t davinci-std/example:myownprefix- -f Dockerfile
-    - id: product1-appimage
+    - id: docker-build
+      run: cd reference/containerimages/app && docker build -t davinci-std/example:myownprefix- -f Dockerfile .
+    - id: out
       run: kanvas output -t /product1/appimage -f githubactions
   product1-argocd:
     needs:
@@ -31,9 +41,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - id: run
-      run: terraform plan -target aws_alb.argocd_api -var ${{ needs.product1-base.outputs.cluster_endpoint }} -var ${{ needs.product1-base.outputs.cluster_token }}
-    - id: product1-argocd
+    - id: terraform-plan
+      run: terraform plan -target aws_alb.argocd_api -var cluster_endpoint=${{ needs.product1-base.outputs.cluster_endpoint }} -var cluster_token=${{ needs.product1-base.outputs.cluster_token }}
+    - id: out
       run: kanvas output -t /product1/argocd -f githubactions
   product1-argocd_resources:
     needs:
@@ -45,9 +55,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - id: run
+    - id: terraform-plan
       run: terraform plan -target argocd_application.kanvas
-    - id: product1-argocd_resources
+    - id: out
       run: kanvas output -t /product1/argocd_resources -f githubactions
   product1-base:
     needs:
@@ -62,7 +72,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - id: run
-      run: terraform plan -target null_resource.eks_cluster -var ${{ needs.product1-appimage.outputs.id }}
-    - id: product1-base
+    - id: terraform-plan
+      run: terraform plan -target null_resource.eks_cluster -var containerimage_name=${{ needs.product1-appimage.outputs.id }}
+    - id: out
       run: kanvas output -t /product1/base -f githubactions

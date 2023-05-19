@@ -70,6 +70,7 @@ func Root() *cobra.Command {
 	{
 		var (
 			target string
+			op     string
 			format string
 		)
 		output := &cobra.Command{
@@ -77,10 +78,11 @@ func Root() *cobra.Command {
 			Short: "Writes or saves the outputs from the specified job",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				return run(cmd, configFile, func(a *app.App) error {
-					return a.Output(format, target)
+					return a.Output(format, op, target)
 				})
 			},
 		}
+		output.Flags().StringVarP(&op, "op", "o", "", "Either diff or apply")
 		output.Flags().StringVarP(&format, "format", "f", plugin.FormatDefault, fmt.Sprintf("Write outputs in this format. The only supported value is %q", plugin.FormatGitHubActions))
 		output.Flags().StringVarP(&target, "target", "t", "", "Targeted job's name for collecting and writings outputs")
 		cmd.AddCommand(output)

@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"kanvas"
 	"log"
 	"os"
 	"path/filepath"
@@ -17,9 +18,9 @@ const (
 	FormatDefault = FormatGitHubActions
 )
 
-func (e *Plugin) outputActionsWorkflows(target string) error {
+func (e *Plugin) outputActionsWorkflows(op kanvas.Op, target string) error {
 	outputs := map[string]string{}
-	if err := e.wf.WorkflowJobs[target].Driver.OutputFunc(e.r, outputs); err != nil {
+	if err := e.wf.WorkflowJobs[target].Driver.OutputFunc(e.r, op, outputs); err != nil {
 		return fmt.Errorf("unable to process outputs for target %q: %w", target, err)
 	}
 
@@ -67,6 +68,10 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 		return strings.ReplaceAll(raw, "/", "-")
 	}
 
+	const (
+		OutputStepID = "out"
+	)
+
 	// Traverse the DAG of jobs
 	for name, job := range e.wf.WorkflowJobs {
 		if job.Driver == nil {
@@ -94,7 +99,7 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 					if _, ok := outputs[jobName]; !ok {
 						outputs[jobName] = map[string]string{}
 					}
-					outputs[jobName][jobAndOutput[1]] = fmt.Sprintf("${{ steps.%s.outputs.%s }}", step, jobAndOutput[1])
+					outputs[jobName][jobAndOutput[1]] = fmt.Sprintf("${{ steps.%s.outputs.%s }}", OutputStepID, jobAndOutput[1])
 				}, func(in kargo.KargoValueProvider) {
 				})
 			}
@@ -118,13 +123,17 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 		}
 
 		for i, s := range job.Driver.Diff {
-			for _, cmd := range s.Run {
-				stepId := fmt.Sprintf("run%d", i)
-				if len(job.Driver.Diff) == 1 {
-					stepId = "run"
+			for j, cmd := range s.Run {
+				stepID := cmd.ID
+				if stepID == "" {
+					if len(job.Driver.Diff) == 1 {
+						stepID = "run"
+					} else {
+						stepID = fmt.Sprintf("run%d%d", i, j)
+					}
 				}
 				steps = append(steps, stepRun(
-					stepId,
+					stepID,
 					cmd,
 					func(out string) (string, error) {
 						jobAndOutput := strings.SplitN(out, ".", 2)
@@ -146,7 +155,7 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 		}
 
 		steps = append(steps, actionsStep{
-			ID:  name,
+			ID:  OutputStepID,
 			Run: strings.Join(job.Driver.Output(FormatGitHubActions), " "),
 		})
 

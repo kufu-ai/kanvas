@@ -2,6 +2,7 @@ package kanvas
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 )
 
@@ -11,10 +12,15 @@ func topologicalSort(dependencies map[string][]string) ([][]string, error) {
 	graph := make(map[string][]string)
 
 	// Initialize the graph, in-degree and the set of nodes with zero in-degree
-	for node, deps := range dependencies {
+	for node := range dependencies {
 		inDegree[node] = 0
-
+	}
+	for node, deps := range dependencies {
 		for _, dep := range deps {
+			if _, ok := inDegree[dep]; !ok {
+				return nil, fmt.Errorf("the dependency %q of node %q does is not an existing node", dep, node)
+			}
+
 			inDegree[node]++
 			graph[dep] = append(graph[dep], node)
 		}

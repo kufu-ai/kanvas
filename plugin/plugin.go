@@ -25,10 +25,10 @@ func (e *Plugin) Export(format string, dir, kanvasContainerImage string) error {
 	return e.exportActionsWorkflows(dir, kanvasContainerImage)
 }
 
-func (e *Plugin) Output(format, target string) error {
+func (e *Plugin) Output(op kanvas.Op, format, target string) error {
 	if format != FormatGitHubActions {
 		return fmt.Errorf("unsupported format %q", format)
 	}
 
-	return e.outputActionsWorkflows(target)
+	return e.outputActionsWorkflows(op, target)
 }

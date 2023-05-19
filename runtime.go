@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 )
 
@@ -37,9 +38,14 @@ func (r *Runtime) Exec(dir string, cmd []string, opts ...ExecOption) error {
 			return fmt.Errorf("executing %q: %w: %s", cmd, err, stderr.String())
 		}
 	} else {
-		out, err := c.CombinedOutput()
+		var (
+			stdout, stderr bytes.Buffer
+		)
+		c.Stdout = io.MultiWriter(&stdout, os.Stdout)
+		c.Stderr = io.MultiWriter(&stderr, os.Stderr)
+		err := c.Run()
 		if err != nil {
-			return fmt.Errorf("executing %q: %w: %s", cmd, err, out)
+			return fmt.Errorf("executing %q: %w: %s", cmd, err, stderr.String())
 		}
 	}
 

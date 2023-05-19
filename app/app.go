@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"kanvas"
 	"kanvas/interpreter"
 	"kanvas/plugin"
@@ -68,7 +69,7 @@ func (a *App) Export(format, dir, kanvasContainerImage string) error {
 	return e.Export(format, dir, kanvasContainerImage)
 }
 
-func (a *App) Output(format, target string) error {
+func (a *App) Output(format, op, target string) error {
 	wf, err := a.newWorkflow()
 	if err != nil {
 		return err
@@ -76,5 +77,15 @@ func (a *App) Output(format, target string) error {
 
 	e := plugin.New(wf, a.Runtime)
 
-	return e.Output(format, target)
+	var o kanvas.Op
+	switch op {
+	case "diff":
+		o = kanvas.Diff
+	case "apply":
+		o = kanvas.Apply
+	default:
+		return fmt.Errorf("unsupported op %q", op)
+	}
+
+	return e.Output(o, format, target)
 }
