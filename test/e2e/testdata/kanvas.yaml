@@ -17,6 +17,18 @@ components:
             value: mycluster
           - name: vpc_name
             value: myvpc
+      eks:
+        dir: /terraform/eks
+        needs:
+        - appimage
+        terraform:
+          vars:
+          - name: name
+            value: mycluster2
+          - name: vpc_name
+            value: myvpc
+          - name: region
+            value: ap-northeast-1
       argocd:
         dir: /terraform/argocd
         needs:
