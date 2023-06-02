@@ -45,10 +45,19 @@ components:
         - appimage
         - argocd
         kubernetes:
-          repo: github.com/mumoshu/kanvas-example
-          path: e2e
           argocd:
-            imageFrom: appimage.id
+            repo: git@github.com:mumoshu/kanvas-example
+            repoSSHPrivateKeyPath: ~/.ssh/id_ed25519
+            # If this path isn't present in the `repo`,
+            # it won't be created automatically.
+            # Instead, you will see an error like:
+            #   time="2023-06-02T03:39:15Z" level=fatal msg="rpc error: code = InvalidArgument desc = application spec for kanvas is invalid: InvalidSpecError: Unable to generate manifests in e2epath: rpc error: code = Unknown desc = e2epath: app path does not exist"
+            path: e2epath/dev
+            upload:
+            - local: kustomize
+              remote: e2epath
+            name: mycluster2
+            imageFrom: appimamge.id
             serverFrom: argocd.argocd_server
             usernameFrom: argocd.argocd_username
             passwordFrom: argocd.argocd_password

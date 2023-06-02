@@ -1,0 +1,7 @@
+resources:
+  - ../../base
+commonLabels:
+  k8s-app: web
+replicas:
+- name: web
+  count: 3
