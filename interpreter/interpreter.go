@@ -165,7 +165,7 @@ func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
 	}
 
 	if err := p.runtime.Exec(dir, c); err != nil {
-		return fmt.Errorf("executing command %q in %s: %w", cmd.Name, dir, err)
+		return fmt.Errorf("command %q: %w", cmd.Name, err)
 	}
 
 	return nil

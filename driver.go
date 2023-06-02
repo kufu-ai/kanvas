@@ -235,17 +235,16 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 			name = c.Kubernetes.Name
 		)
 
-		dir, err := filepath.Abs(c.Dir)
+		absdir, err := filepath.Abs(dir)
 		if err != nil {
-			return nil, fmt.Errorf("invalid dir %q: %w", c.Dir, err)
+			return nil, fmt.Errorf("invalid dir %q: %w", dir, err)
 		}
 
 		if name == "" {
-			name = filepath.Base(dir)
+			name = filepath.Base(absdir)
 		}
 
 		c.Kubernetes.Name = name
-		c.Kubernetes.Path = dir
 
 		g := &kargo.Generator{
 			GetValue: func(key string) (string, error) {

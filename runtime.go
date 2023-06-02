@@ -35,7 +35,7 @@ func (r *Runtime) Exec(dir string, cmd []string, opts ...ExecOption) error {
 
 		c.Stderr = &stderr
 		if err := c.Run(); err != nil {
-			return fmt.Errorf("executing %q: %w: %s", cmd, err, stderr.String())
+			return fmt.Errorf("executing %q in %q: %w: %s", cmd, dir, err, stderr.String())
 		}
 	} else {
 		var (
@@ -45,7 +45,7 @@ func (r *Runtime) Exec(dir string, cmd []string, opts ...ExecOption) error {
 		c.Stderr = io.MultiWriter(&stderr, os.Stderr)
 		err := c.Run()
 		if err != nil {
-			return fmt.Errorf("executing %q: %w: %s", cmd, err, stderr.String())
+			return fmt.Errorf("executing %q in %q: %w: %s", cmd, dir, err, stderr.String())
 		}
 	}
 
