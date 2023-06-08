@@ -12,9 +12,10 @@ type App struct {
 	WorkDir string
 	Config  kanvas.Component
 	Runtime *kanvas.Runtime
+	Options kanvas.Options
 }
 
-func New(path string) (*App, error) {
+func New(path string, opts kanvas.Options) (*App, error) {
 	c, err := kanvas.New(path)
 	if err != nil {
 		return nil, err
@@ -26,12 +27,13 @@ func New(path string) (*App, error) {
 		WorkDir: filepath.Dir(path),
 		Config:  *c,
 		Runtime: r,
+		Options: opts,
 	}, nil
 
 }
 
 func (a *App) newWorkflow() (*kanvas.Workflow, error) {
-	return kanvas.NewWorkflow(a.WorkDir, a.Config)
+	return kanvas.NewWorkflow(a.WorkDir, a.Config, a.Options)
 }
 
 // Diff shows the diff between the desired state and the current state

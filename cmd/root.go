@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"kanvas"
 	"kanvas/app"
 	"kanvas/build"
 	"kanvas/plugin"
@@ -12,6 +13,7 @@ import (
 func Root() *cobra.Command {
 	var (
 		configFile string
+		opts       kanvas.Options
 	)
 
 	cmd := &cobra.Command{
@@ -26,7 +28,7 @@ func Root() *cobra.Command {
 		Short: "Shows the diff between the desired state and the current state",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
-			return run(cmd, configFile, func(a *app.App) error {
+			return run(cmd, configFile, opts, func(a *app.App) error {
 				return a.Diff()
 			})
 		},
@@ -38,11 +40,12 @@ func Root() *cobra.Command {
 		Short: "Build the container image(s) if any and runs terraform-apply command(s) to deploy changes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
-			return run(cmd, configFile, func(a *app.App) error {
+			return run(cmd, configFile, opts, func(a *app.App) error {
 				return a.Apply()
 			})
 		},
 	}
+	apply.Flags().BoolVar(&opts.LogsFollow, "logs-follow", false, "Follow log output from the components")
 	cmd.AddCommand(apply)
 
 	{
@@ -55,7 +58,7 @@ func Root() *cobra.Command {
 			Use:   "export",
 			Short: "Export the apply and the diff workflows to GitHub Actions",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return run(cmd, configFile, func(a *app.App) error {
+				return run(cmd, configFile, opts, func(a *app.App) error {
 					cmd.SilenceUsage = true
 					return a.Export(format, exportDir, kanvasContainerImage)
 				})
@@ -77,7 +80,7 @@ func Root() *cobra.Command {
 			Use:   "output",
 			Short: "Writes or saves the outputs from the specified job",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return run(cmd, configFile, func(a *app.App) error {
+				return run(cmd, configFile, opts, func(a *app.App) error {
 					return a.Output(format, op, target)
 				})
 			},
@@ -91,8 +94,8 @@ func Root() *cobra.Command {
 	return cmd
 }
 
-func run(cmd *cobra.Command, configFile string, do func(*app.App) error) error {
-	app, err := app.New(configFile)
+func run(cmd *cobra.Command, configFile string, opts kanvas.Options, do func(*app.App) error) error {
+	app, err := app.New(configFile, opts)
 	if err != nil {
 		cmd.SilenceUsage = true
 		return err

@@ -9,6 +9,7 @@ type Workflow struct {
 	Plan         [][]string
 	WorkflowJobs map[string]*WorkflowJob
 	Dir          string
+	Options      Options
 
 	deps map[string][]string
 }
@@ -19,11 +20,12 @@ type WorkflowJob struct {
 	Driver *Driver
 }
 
-func NewWorkflow(workDir string, config Component) (*Workflow, error) {
+func NewWorkflow(workDir string, config Component, opts Options) (*Workflow, error) {
 	wf := &Workflow{
 		WorkflowJobs: map[string]*WorkflowJob{},
 		Dir:          workDir,
 		deps:         make(map[string][]string),
+		Options:      opts,
 	}
 
 	if err := wf.Load("", workDir, config); err != nil {
@@ -93,7 +95,7 @@ func (wf *Workflow) load(path, baseDir string, config Component) error {
 			}
 		}
 
-		driver, err := newDriver(subPath, dir, c)
+		driver, err := newDriver(subPath, dir, c, wf.Options)
 		if err != nil {
 			return err
 		}

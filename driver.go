@@ -42,7 +42,11 @@ const (
 	Apply
 )
 
-func newDriver(id, dir string, c Component) (*Driver, error) {
+type Options struct {
+	LogsFollow bool
+}
+
+func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 	output := func(format string) []string {
 		return append([]string{
 			"kanvas", "output", "-t", id, "-f",
@@ -250,7 +254,7 @@ func newDriver(id, dir string, c Component) (*Driver, error) {
 			GetValue: func(key string) (string, error) {
 				return "$" + strings.ToUpper(strings.ReplaceAll(key, ".", "_")), nil
 			},
-			TailLogs: false,
+			TailLogs: opts.LogsFollow,
 		}
 
 		diff, err := g.ExecCmds(&c.Kubernetes.Config, kargo.Plan)
