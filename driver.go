@@ -43,7 +43,15 @@ const (
 )
 
 type Options struct {
+	ConfigFile string
 	LogsFollow bool
+}
+
+func (o Options) GetConfigPath() string {
+	if o.ConfigFile != "" {
+		return o.ConfigFile
+	}
+	return "kanvas.yaml"
 }
 
 func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {

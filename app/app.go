@@ -15,7 +15,9 @@ type App struct {
 	Options kanvas.Options
 }
 
-func New(path string, opts kanvas.Options) (*App, error) {
+func New(opts kanvas.Options) (*App, error) {
+	path := opts.GetConfigPath()
+
 	c, err := kanvas.New(path)
 	if err != nil {
 		return nil, err

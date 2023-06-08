@@ -16,3 +16,20 @@ GO_BUILD_VERSION_LDFLAGS=\
 build:
 	go build -ldflags="$(GO_BUILD_VERSION_LDFLAGS)" -o dist/kanvas ./cmd/kanvas
 .PHONY: build
+
+# find or download yq
+# download yq if necessary
+# Use always go-version to get consistent line wraps etc.
+docgen:
+ifeq (, $(wildcard $(GOBIN)/docgen))
+	echo "Downloading yq"
+	@{ \
+	set -e ;\
+	DG_TMP_DIR=$$(mktemp -d) ;\
+	cd $$DG_TMP_DIR ;\
+	go mod init tmp ;\
+	go install github.com/projectdiscovery/yamldoc-go/cmd/docgen@latest ;\
+	rm -rf $$DG_TMP_DIR ;\
+	}
+endif
+DOCGEN=$(GOBIN)/docgen

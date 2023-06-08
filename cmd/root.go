@@ -12,8 +12,7 @@ import (
 
 func Root() *cobra.Command {
 	var (
-		configFile string
-		opts       kanvas.Options
+		opts kanvas.Options
 	)
 
 	cmd := &cobra.Command{
@@ -21,14 +20,25 @@ func Root() *cobra.Command {
 		Short:   "A container-based application deployer",
 		Version: build.Version(),
 	}
-	cmd.PersistentFlags().StringVarP(&configFile, "config", "c", "kanvas.yaml", "The path to the config file that declares the deployment workflow")
+	cmd.PersistentFlags().StringVarP(&opts.ConfigFile, "config", "c", "kanvas.yaml", "The path to the config file that declares the deployment workflow")
+
+	new := &cobra.Command{
+		Use:   "new",
+		Short: "Creates a new kanvas.yaml file",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+			a := &app.App{}
+			return a.New()
+		},
+	}
+	cmd.AddCommand(new)
 
 	diff := &cobra.Command{
 		Use:   "diff",
 		Short: "Shows the diff between the desired state and the current state",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
-			return run(cmd, configFile, opts, func(a *app.App) error {
+			return run(cmd, opts, func(a *app.App) error {
 				return a.Diff()
 			})
 		},
@@ -40,7 +50,7 @@ func Root() *cobra.Command {
 		Short: "Build the container image(s) if any and runs terraform-apply command(s) to deploy changes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
-			return run(cmd, configFile, opts, func(a *app.App) error {
+			return run(cmd, opts, func(a *app.App) error {
 				return a.Apply()
 			})
 		},
@@ -58,7 +68,7 @@ func Root() *cobra.Command {
 			Use:   "export",
 			Short: "Export the apply and the diff workflows to GitHub Actions",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return run(cmd, configFile, opts, func(a *app.App) error {
+				return run(cmd, opts, func(a *app.App) error {
 					cmd.SilenceUsage = true
 					return a.Export(format, exportDir, kanvasContainerImage)
 				})
@@ -80,7 +90,7 @@ func Root() *cobra.Command {
 			Use:   "output",
 			Short: "Writes or saves the outputs from the specified job",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return run(cmd, configFile, opts, func(a *app.App) error {
+				return run(cmd, opts, func(a *app.App) error {
 					return a.Output(format, op, target)
 				})
 			},
@@ -94,8 +104,8 @@ func Root() *cobra.Command {
 	return cmd
 }
 
-func run(cmd *cobra.Command, configFile string, opts kanvas.Options, do func(*app.App) error) error {
-	app, err := app.New(configFile, opts)
+func run(cmd *cobra.Command, opts kanvas.Options, do func(*app.App) error) error {
+	app, err := app.New(opts)
 	if err != nil {
 		cmd.SilenceUsage = true
 		return err

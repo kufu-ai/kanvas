@@ -1,3 +1,5 @@
+//go:generate docgen kanvas.go kanvas_doc.go Component
+
 package kanvas
 
 import (
@@ -7,34 +9,52 @@ import (
 	"github.com/mumoshu/kargo"
 )
 
+// Component is a component of the application
 type Component struct {
 	// Dir is the directory to be chdir'ed before running the commands
 	// If empty, this defaults to the base dir, which is where kanvas.yaml is located.
-	Dir        string               `yaml:"dir"`
+	Dir string `yaml:"dir,omitempty"`
+	// Components is a map of sub-components
 	Components map[string]Component `yaml:"components"`
-	Needs      []string             `yaml:"needs"`
-	Docker     *Docker              `yaml:"docker,omitempty"`
-	Terraform  *Terraform           `yaml:"terraform,omitempty"`
-	Kubernetes *Kubernetes          `yaml:"kubernetes,omitempty"`
+	// Needs is a list of components that this component depends on
+	Needs []string `yaml:"needs,omitempty"`
+	// Docker is a docker-specific configuration
+	Docker *Docker `yaml:"docker,omitempty"`
+	// Terraform is a terraform-specific configuration
+	Terraform *Terraform `yaml:"terraform,omitempty"`
+	// Kubernetes is a kubernetes-specific configuration
+	Kubernetes *Kubernetes `yaml:"kubernetes,omitempty"`
 }
 
+// Docker is a docker-specific configuration
 type Docker struct {
+	// Image is the name of the image to be built
 	Image string `yaml:"image"`
-	File  string `yaml:"file"`
+	// File is the path to the Dockerfile
+	File string `yaml:"file"`
 }
 
+// Terraform is a terraform-specific configuration
 type Terraform struct {
+	// Target is the target resource to be deployed
 	Target string `yaml:"target"`
-	Vars   []Var  `yaml:"vars"`
+	// Vars is a list of variables to be passed to terraform
+	Vars []Var `yaml:"vars"`
 }
 
+// Var is a variable to be passed to terraform
 type Var struct {
-	Name      string `yaml:"name"`
+	// Name is the name of the variable
+	Name string `yaml:"name"`
+	// ValueFrom is the source of the value of the variable
 	ValueFrom string `yaml:"valueFrom"`
-	Value     string `yaml:"value"`
+	// Value is the value of the variable
+	Value string `yaml:"value"`
 }
 
+// Kubernetes is a kubernetes-specific configuration
 type Kubernetes struct {
+	// Config contains all the Kubernetes-specific configuration
 	kargo.Config `yaml:",inline"`
 }
 
