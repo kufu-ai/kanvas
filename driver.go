@@ -162,12 +162,12 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 
 		return &Driver{
 			Diff: Seq(
-				Cmd("terraform-init", "terraform", cmd.Args("init")),
-				Cmd("terraform-plan", "terraform", cmd.Args("plan", args, dynArgs)),
+				Cmd("terraform-init", "terraform", cmd.Args("init"), cmd.Dir(dir)),
+				Cmd("terraform-plan", "terraform", cmd.Args("plan", args, dynArgs), cmd.Dir(dir)),
 			),
 			Apply: Seq(
-				Cmd("terraform-init", "terraform", cmd.Args("init")),
-				Cmd("terraform-apply", "terraform", cmd.Args("apply", applyArgs, dynArgs)),
+				Cmd("terraform-init", "terraform", cmd.Args("init"), cmd.Dir(dir)),
+				Cmd("terraform-apply", "terraform", cmd.Args("apply", applyArgs, dynArgs), cmd.Dir(dir)),
 			),
 			Output: output,
 			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {

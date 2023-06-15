@@ -44,8 +44,10 @@ jobs:
         fetch-depth: 0
     - id: terraform-init
       run: terraform init
+      working-directory: reference/tf2
     - id: terraform-plan
       run: terraform plan -var cluster_endpoint=${{ needs.product1-base.outputs.cluster_endpoint }} -var cluster_token=${{ needs.product1-base.outputs.cluster_token }}
+      working-directory: reference/tf2
     - id: out
       run: kanvas output -t /product1/argocd -f githubactions
   product1-argocd_resources:
@@ -60,8 +62,10 @@ jobs:
         fetch-depth: 0
     - id: terraform-init
       run: terraform init
+      working-directory: reference/tf2
     - id: terraform-plan
       run: terraform plan
+      working-directory: reference/tf2
     - id: out
       run: kanvas output -t /product1/argocd_resources -f githubactions
   product1-base:
@@ -79,7 +83,9 @@ jobs:
         fetch-depth: 0
     - id: terraform-init
       run: terraform init
+      working-directory: reference/tf2
     - id: terraform-plan
       run: terraform plan -var containerimage_name=${{ needs.product1-appimage.outputs.id }}
+      working-directory: reference/tf2
     - id: out
       run: kanvas output -t /product1/base -f githubactions
