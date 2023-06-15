@@ -138,9 +138,9 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 	} else if c.Terraform != nil {
 		var args []string
 
-		// if c.Terraform.Target != "" {
-		// 	args = []string{"-target", c.Terraform.Target}
-		// }
+		if c.Terraform.Target != "" {
+			args = []string{"-target", c.Terraform.Target}
+		}
 
 		dynArgs := &kargo.Args{}
 		for _, v := range c.Terraform.Vars {

@@ -46,7 +46,7 @@ jobs:
       run: terraform init
       working-directory: reference/tf2
     - id: terraform-plan
-      run: terraform plan -var cluster_endpoint=${{ needs.product1-base.outputs.cluster_endpoint }} -var cluster_token=${{ needs.product1-base.outputs.cluster_token }}
+      run: terraform plan -target aws_alb.argocd_api -var cluster_endpoint=${{ needs.product1-base.outputs.cluster_endpoint }} -var cluster_token=${{ needs.product1-base.outputs.cluster_token }}
       working-directory: reference/tf2
     - id: out
       run: kanvas output -t /product1/argocd -f githubactions
@@ -64,7 +64,7 @@ jobs:
       run: terraform init
       working-directory: reference/tf2
     - id: terraform-plan
-      run: terraform plan
+      run: terraform plan -target argocd_application.kanvas
       working-directory: reference/tf2
     - id: out
       run: kanvas output -t /product1/argocd_resources -f githubactions
@@ -85,7 +85,7 @@ jobs:
       run: terraform init
       working-directory: reference/tf2
     - id: terraform-plan
-      run: terraform plan -var containerimage_name=${{ needs.product1-appimage.outputs.id }}
+      run: terraform plan -target null_resource.eks_cluster -var containerimage_name=${{ needs.product1-appimage.outputs.id }}
       working-directory: reference/tf2
     - id: out
       run: kanvas output -t /product1/base -f githubactions
