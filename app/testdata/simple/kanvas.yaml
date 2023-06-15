@@ -1,0 +1,10 @@
+# Components is a map of sub-components
+components:
+    image:
+        dir: docker # Dir is the directory to be chdir'ed before running the commands
+        # Components is a map of sub-components
+        components: {}
+        # Docker is a docker-specific configuration
+        docker:
+            image: examplecom/myapp # Image is the name of the image to be built
+            file: Dockerfile # File is the path to the Dockerfile

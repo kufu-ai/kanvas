@@ -10,7 +10,15 @@ import (
 
 // New generates a new kanvas.yaml from all the comments and the default settings.
 func (a *App) New() error {
-	data, err := a.generateConfigData()
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	args := generateArgs{
+		Dir: wd,
+	}
+	data, err := a.generateConfigData(args)
 	if err != nil {
 		return err
 	}
@@ -31,7 +39,11 @@ func (a *App) New() error {
 	return nil
 }
 
-func (a *App) generateConfigData() ([]byte, error) {
+type generateArgs struct {
+	Dir string
+}
+
+func (a *App) generateConfigData(args generateArgs) ([]byte, error) {
 	encoder := encoder.NewEncoder(&kanvas.Component{
 		Components: map[string]kanvas.Component{
 			"image": {
