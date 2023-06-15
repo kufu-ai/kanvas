@@ -2,6 +2,7 @@ package test
 
 import (
 	"io/ioutil"
+	"kanvas"
 	"kanvas/app"
 	"os"
 	"path/filepath"
@@ -40,7 +41,9 @@ func run(t *testing.T, name string) {
 			exports[f.Name()] = string(data)
 		}
 
-		a, err := app.New(configFile)
+		a, err := app.New(kanvas.Options{
+			ConfigFile: configFile,
+		})
 		require.NoError(t, err)
 
 		require.NoError(t, a.Export("githubactions", destDir, "kanvas:example"))

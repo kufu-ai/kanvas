@@ -28,7 +28,8 @@ jobs:
       with:
         fetch-depth: 0
     - id: docker-build
-      run: cd reference/containerimages/app && docker build -t davinci-std/example:myownprefix- -f Dockerfile .
+      run: docker build -t davinci-std/example:myownprefix- -f Dockerfile .
+      working-directory: reference/containerimages/app
     - id: out
       run: kanvas output -t /product1/appimage -f githubactions
   product1-argocd:
@@ -41,8 +42,10 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
+    - id: terraform-init
+      run: terraform init
     - id: terraform-plan
-      run: terraform plan -target aws_alb.argocd_api -var cluster_endpoint=${{ needs.product1-base.outputs.cluster_endpoint }} -var cluster_token=${{ needs.product1-base.outputs.cluster_token }}
+      run: terraform plan -var cluster_endpoint=${{ needs.product1-base.outputs.cluster_endpoint }} -var cluster_token=${{ needs.product1-base.outputs.cluster_token }}
     - id: out
       run: kanvas output -t /product1/argocd -f githubactions
   product1-argocd_resources:
@@ -55,8 +58,10 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
+    - id: terraform-init
+      run: terraform init
     - id: terraform-plan
-      run: terraform plan -target argocd_application.kanvas
+      run: terraform plan
     - id: out
       run: kanvas output -t /product1/argocd_resources -f githubactions
   product1-base:
@@ -72,7 +77,9 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
+    - id: terraform-init
+      run: terraform init
     - id: terraform-plan
-      run: terraform plan -target null_resource.eks_cluster -var containerimage_name=${{ needs.product1-appimage.outputs.id }}
+      run: terraform plan -var containerimage_name=${{ needs.product1-appimage.outputs.id }}
     - id: out
       run: kanvas output -t /product1/base -f githubactions

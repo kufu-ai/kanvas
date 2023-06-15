@@ -216,6 +216,8 @@ type actionsStep struct {
 	Run  string                 `yaml:"run,omitempty"`
 	Uses string                 `yaml:"uses,omitempty"`
 	With map[string]interface{} `yaml:"with,omitempty"`
+	// See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+	WorkingDirectory string `yaml:"working-directory,omitempty"`
 }
 
 func stepCheckout() actionsStep {
@@ -230,12 +232,9 @@ func stepCheckout() actionsStep {
 func stepRun(id string, cmd kargo.Cmd, get func(string) (string, error)) actionsStep {
 	run := fmt.Sprintf("%s %s", cmd.Name, strings.Join(cmd.Args.MustCollect(get), " "))
 
-	if cmd.Dir != "" {
-		run = fmt.Sprintf("cd %s && %s", cmd.Dir, run)
-	}
-
 	return actionsStep{
-		ID:  id,
-		Run: run,
+		ID:               id,
+		Run:              run,
+		WorkingDirectory: cmd.Dir,
 	}
 }
