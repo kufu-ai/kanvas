@@ -8,20 +8,9 @@ import (
 	"github.com/projectdiscovery/yamldoc-go/encoder"
 )
 
+// New generates a new kanvas.yaml from all the comments and the default settings.
 func (a *App) New() error {
-	encoder := encoder.NewEncoder(&kanvas.Component{
-		Components: map[string]kanvas.Component{
-			"image": {
-				Dir: "docker",
-				Docker: &kanvas.Docker{
-					Image: "examplecom/myapp",
-					File:  "Dockerfile",
-				},
-			},
-		},
-	}, encoder.WithComments(encoder.CommentsAll))
-
-	data, err := encoder.Encode()
+	data, err := a.generateConfigData()
 	if err != nil {
 		return err
 	}
@@ -40,4 +29,25 @@ func (a *App) New() error {
 	fmt.Fprintf(os.Stderr, "Created %q\n", f)
 
 	return nil
+}
+
+func (a *App) generateConfigData() ([]byte, error) {
+	encoder := encoder.NewEncoder(&kanvas.Component{
+		Components: map[string]kanvas.Component{
+			"image": {
+				Dir: "docker",
+				Docker: &kanvas.Docker{
+					Image: "examplecom/myapp",
+					File:  "Dockerfile",
+				},
+			},
+		},
+	}, encoder.WithComments(encoder.CommentsAll))
+
+	data, err := encoder.Encode()
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
