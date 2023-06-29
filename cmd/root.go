@@ -20,6 +20,7 @@ func Root() *cobra.Command {
 		Short:   "A container-based application deployer",
 		Version: build.Version(),
 	}
+	cmd.PersistentFlags().StringVarP(&opts.Env, "env", "e", "", "The environment to deploy to")
 	cmd.PersistentFlags().StringVarP(&opts.ConfigFile, "config", "c", "kanvas.yaml", "The path to the config file that declares the deployment workflow")
 
 	new := &cobra.Command{

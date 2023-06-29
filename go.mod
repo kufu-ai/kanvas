@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/goccy/go-yaml v1.9.8
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/hcl/v2 v2.16.2
 	github.com/mumoshu/kargo v0.0.0-20211013110000-000000000000
 	github.com/projectdiscovery/yamldoc-go v1.0.4
@@ -16,14 +17,11 @@ replace github.com/mumoshu/kargo => ./kargo
 
 require (
 	github.com/agext/levenshtein v1.2.1 // indirect
-	github.com/apparentlymart/go-textseg v1.0.0 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/hashicorp/hcl2 v0.0.0-20191002203319-fb75b3253c80 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

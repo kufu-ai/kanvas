@@ -1,6 +1,7 @@
 package kanvas
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 )
@@ -36,7 +37,12 @@ func NewWorkflow(workDir string, config Component, opts Options) (*Workflow, err
 }
 
 func (wf *Workflow) Load(path, baseDir string, config Component) error {
-	if err := wf.load(path, baseDir, config); err != nil {
+	components, err := wf.loadEnvironment(config)
+	if err != nil {
+		return err
+	}
+
+	if err := wf.load(path, baseDir, components); err != nil {
 		return err
 	}
 
@@ -75,8 +81,31 @@ func (wf *Workflow) Load(path, baseDir string, config Component) error {
 	return nil
 }
 
-func (wf *Workflow) load(path, baseDir string, config Component) error {
+func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, error) {
+	var env Environment
+	if config.Environments != nil && wf.Options.Env != "" {
+		var ok bool
+		env, ok = config.Environments[wf.Options.Env]
+		if !ok {
+			return nil, fmt.Errorf("environment %q not found", wf.Options.Env)
+		}
+	}
+
+	r := map[string]Component{}
+
 	for name, c := range config.Components {
+		if replacement, ok := env.Uses[name]; ok {
+			c = replacement
+		}
+
+		r[name] = c
+	}
+
+	return r, nil
+}
+
+func (wf *Workflow) load(path, baseDir string, components map[string]Component) error {
+	for name, c := range components {
 		subPath := ID(path, name)
 
 		var needs []string
@@ -106,7 +135,7 @@ func (wf *Workflow) load(path, baseDir string, config Component) error {
 			Driver: driver,
 		}
 
-		if err := wf.load(subPath, dir, c); err != nil {
+		if err := wf.load(subPath, dir, c.Components); err != nil {
 			return err
 		}
 

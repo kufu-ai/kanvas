@@ -24,6 +24,14 @@ type Component struct {
 	Terraform *Terraform `yaml:"terraform,omitempty"`
 	// Kubernetes is a kubernetes-specific configuration
 	Kubernetes *Kubernetes `yaml:"kubernetes,omitempty"`
+	// Environments is a map of environments
+	Environments map[string]Environment `yaml:"environments,omitempty"`
+}
+
+// Environment is a set of sub-components to replace the defaults
+type Environment struct {
+	// Uses is a set of sub-components to replace the defaults
+	Uses map[string]Component `yaml:"uses,omitempty"`
 }
 
 // Docker is a docker-specific configuration

@@ -43,6 +43,7 @@ const (
 )
 
 type Options struct {
+	Env        string
 	ConfigFile string
 	LogsFollow bool
 }
