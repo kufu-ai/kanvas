@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"kanvas"
 	"kanvas/app"
@@ -17,11 +18,18 @@ func TestExport(t *testing.T) {
 		t.SkipNow()
 	}
 
-	run(t, "reference")
+	run(t, "reference", "")
 }
 
-func run(t *testing.T, name string) {
+func run(t *testing.T, sub, env string) {
 	t.Helper()
+
+	var name string
+	if env == "" {
+		name = sub
+	} else {
+		name = fmt.Sprintf("%s-%s", sub, env)
+	}
 
 	t.Run(name, func(t *testing.T) {
 		var (
@@ -43,6 +51,7 @@ func run(t *testing.T, name string) {
 
 		a, err := app.New(kanvas.Options{
 			ConfigFile: configFile,
+			Env:        env,
 		})
 		require.NoError(t, err)
 

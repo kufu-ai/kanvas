@@ -30,6 +30,8 @@ type Component struct {
 
 // Environment is a set of sub-components to replace the defaults
 type Environment struct {
+	// Defaults is the environment-specific defaults
+	Defaults Component `yaml:"defaults,omitempty"`
 	// Uses is a set of sub-components to replace the defaults
 	Uses map[string]Component `yaml:"uses,omitempty"`
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"dario.cat/mergo"
 )
 
 type Workflow struct {
@@ -96,6 +98,15 @@ func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, err
 	for name, c := range config.Components {
 		if replacement, ok := env.Uses[name]; ok {
 			c = replacement
+		}
+
+		defaults, err := DeepCopyComponent(env.Defaults)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := mergo.Merge(defaults, c, mergo.WithOverride); err != nil {
+			return nil, err
 		}
 
 		r[name] = c
