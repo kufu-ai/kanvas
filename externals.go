@@ -1,6 +1,9 @@
 package kanvas
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Externals exposes external parameters and secrets as the component's outputs.
 // Internally, externals invoke the `vals` library to fetch the values from external sources
@@ -39,6 +42,8 @@ type OutputFrom struct {
 	AWSSecret *AWSSecret `yaml:"awsSecret"`
 	// GoogleSheetCell is a reference to a Google Sheet cell
 	GoogleSheetCell *GoogleSheetCell `yaml:"googleSheetCell"`
+	// TerraformState is a reference to a terraform state
+	TerraformState *TerraformState `yaml:"terraformState"`
 }
 
 // AWSParam is a reference to an AWS parameter store parameter
@@ -185,4 +190,53 @@ func (c GoogleSheetCell) Validate() error {
 
 func (c GoogleSheetCell) ValsRefURL() string {
 	return fmt.Sprintf("ref+googlesheets://%s?credentials_file=%s/%s", c.SheetID, c.CredentialsFile, c.Key)
+}
+
+type TerraformState struct {
+	// Path is the path to the terraform state file
+	// This is relative to the base dir, which is where kanvas.yaml is located.
+	// Example: terraform/terraform.tfstate
+	Path string `yaml:"path"`
+	// URL is the URL to the terraform state file
+	// Either s3:// or gs:// is supported.
+	// Example: s3://mybucket/terraform.tfstate
+	URL string `yaml:"url"`
+	// Expr is the expression to be evaluated against the terraform state to fetch the value
+	// Only dot-notation is supported.
+	// Example: output.OUTPUT_NAME
+	Expr string `yaml:"expr"`
+}
+
+func (s TerraformState) Validate() error {
+	if s.Path == "" && s.URL == "" {
+		return fmt.Errorf("either path or url must be set")
+	}
+
+	if s.Path != "" && s.URL != "" {
+		return fmt.Errorf("path and url are mutually exclusive")
+	}
+
+	if s.Path != "" && !strings.HasSuffix(s.Path, ".tfstate") {
+		return fmt.Errorf("path must end with .tfstate")
+	}
+
+	if s.URL != "" && !strings.HasPrefix(s.URL, "s3://") && !strings.HasPrefix(s.URL, "gs://") {
+		return fmt.Errorf("url must start with s3:// or gs://")
+	}
+
+	if s.Expr == "" {
+		return fmt.Errorf("expr must be set")
+	}
+
+	return nil
+}
+
+func (s TerraformState) ValsRefURL() string {
+	base := "ref+tfstate"
+	if s.URL != "" {
+		base = fmt.Sprintf("%s%s", base, s.URL)
+	} else {
+		base = fmt.Sprintf("%s://%s", base, s.Path)
+	}
+	return fmt.Sprintf("%s/%s", base, s.Expr)
 }
