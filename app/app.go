@@ -18,7 +18,7 @@ type App struct {
 func New(opts kanvas.Options) (*App, error) {
 	path := opts.GetConfigPath()
 
-	c, err := kanvas.New(path)
+	c, err := kanvas.LoadConfigFile(path)
 	if err != nil {
 		return nil, err
 	}

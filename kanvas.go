@@ -4,8 +4,10 @@ package kanvas
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/goccy/go-yaml"
+	"github.com/google/go-jsonnet"
 	"github.com/mumoshu/kargo"
 )
 
@@ -70,7 +72,15 @@ type Kubernetes struct {
 	kargo.Config `yaml:",inline"`
 }
 
-func New(path string) (*Component, error) {
+// LoadConfigFile loads the configuration file
+// The configuration file is either a yaml or jsonnet file.
+//
+// If the file is a yaml file, it is unmarshalled into the Component struct as-is.
+//
+// The jsonnet file can be used to generate the yaml file.
+// If the file is a jsonnet file, it is compiled to json first.
+// The compiled json is then unmarshalled into the Component struct.
+func LoadConfigFile(path string) (*Component, error) {
 	var (
 		config Component
 	)
@@ -78,6 +88,17 @@ func New(path string) (*Component, error) {
 	file, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
+	}
+
+	if filepath.Ext(path) == ".jsonnet" {
+		vm := jsonnet.MakeVM()
+
+		json, err := vm.EvaluateAnonymousSnippet(path, string(file))
+		if err != nil {
+			return nil, err
+		}
+
+		file = []byte(json)
 	}
 
 	if err := yaml.Unmarshal(file, &config); err != nil {
