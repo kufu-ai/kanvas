@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/helmfile/vals"
 	"github.com/mumoshu/kargo"
 	"github.com/mumoshu/kargo/cmd"
 )
@@ -281,6 +282,34 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			Apply:  cmdsToSeq(apply),
 			Output: output,
 			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
+				return nil
+			},
+		}, nil
+	} else if c.Externals != nil {
+		return &Driver{
+			Diff:   Seq(),
+			Apply:  Seq(),
+			Output: output,
+			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
+				rt, err := vals.New(vals.Options{CacheSize: 512})
+				if err != nil {
+					return fmt.Errorf("unable to init vals: %w", err)
+				}
+
+				m, err := c.Externals.NewValsTemplate()
+				if err != nil {
+					return fmt.Errorf("unable to create vals template: %w", err)
+				}
+
+				out, err := rt.Eval(m)
+				if err != nil {
+					return fmt.Errorf("unable to run vals eval: %w", err)
+				}
+
+				for k, v := range out {
+					o[k] = fmt.Sprintf("%s", v)
+				}
+
 				return nil
 			},
 		}, nil

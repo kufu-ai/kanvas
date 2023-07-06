@@ -26,6 +26,8 @@ type Component struct {
 	Kubernetes *Kubernetes `yaml:"kubernetes,omitempty"`
 	// Environments is a map of environments
 	Environments map[string]Environment `yaml:"environments,omitempty"`
+	// Externals exposes external parameters and secrets as the component's outputs
+	Externals *Externals `yaml:"externals,omitempty"`
 }
 
 // Environment is a set of sub-components to replace the defaults
