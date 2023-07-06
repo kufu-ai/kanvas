@@ -21,7 +21,7 @@ func Root() *cobra.Command {
 		Version: build.Version(),
 	}
 	cmd.PersistentFlags().StringVarP(&opts.Env, "env", "e", "", "The environment to deploy to")
-	cmd.PersistentFlags().StringVarP(&opts.ConfigFile, "config", "c", "kanvas.yaml", "The path to the config file that declares the deployment workflow")
+	cmd.PersistentFlags().StringVarP(&opts.ConfigFile, "config", "c", kanvas.DefaultConfigFileYAML, "The path to the config file that declares the deployment workflow")
 
 	new := &cobra.Command{
 		Use:   "new",

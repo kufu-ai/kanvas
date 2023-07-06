@@ -33,7 +33,7 @@ func run(t *testing.T, sub, env string) {
 
 	t.Run(name, func(t *testing.T) {
 		var (
-			configFile = filepath.Join(name, "kanvas.yaml")
+			configFile = filepath.Join(name, kanvas.DefaultConfigFileYAML)
 			exportsDir = filepath.Join(name, "exports")
 			destDir    = t.TempDir()
 		)

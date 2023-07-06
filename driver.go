@@ -53,7 +53,7 @@ func (o Options) GetConfigPath() string {
 	if o.ConfigFile != "" {
 		return o.ConfigFile
 	}
-	return "kanvas.yaml"
+	return DefaultConfigFileYAML
 }
 
 func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {

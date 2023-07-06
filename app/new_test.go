@@ -1,6 +1,7 @@
 package app
 
 import (
+	"kanvas"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,7 +24,7 @@ func run(t *testing.T, name string) {
 	t.Run(name, func(t *testing.T) {
 		var (
 			testdataDir      = "testdata"
-			wantedConfigFile = filepath.Join(testdataDir, name, "kanvas.yaml")
+			wantedConfigFile = filepath.Join(testdataDir, name, kanvas.DefaultConfigFileYAML)
 		)
 
 		args := generateArgs{
