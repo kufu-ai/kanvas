@@ -1,28 +1,11 @@
+local appimage = import 'appimage.jsonnet';
+
 {
-  "components": {
+  "components": { // Define all the components here
     "product1": {
       "components": {
-        "appimage": {
-          "dir": "/containerimages/app",
-          "docker": {
-            "image": "davinci-std/example:myownprefix-"
-          }
-        },
-        "base": {
-          "dir": "/tf2",
-          "needs": [
-            "appimage"
-          ],
-          "terraform": {
-            "target": "null_resource.eks_cluster",
-            "vars": [
-              {
-                "name": "containerimage_name",
-                "valueFrom": "appimage.id"
-              }
-            ]
-          }
-        },
+        "appimage": appimage,
+        "base": import 'base.jsonnet',
         "argocd": {
           "dir": "/tf2",
           "needs": [
