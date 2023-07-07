@@ -25,9 +25,15 @@ func (a *App) New() error {
 
 	fmt.Fprintf(os.Stdout, "%s", string(data))
 
-	f := a.Options.GetConfigPath()
+	f := a.Options.GetConfigFilePath()
+	if f == "" {
+		f = kanvas.DefaultConfigFileYAML
+	}
+
 	if stat, err := os.Stat(f); err == nil && !stat.IsDir() {
 		return fmt.Errorf("file %q already exists", f)
+	} else if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("unable to stat %q: %w", f, err)
 	}
 
 	if err := os.WriteFile(f, data, 0644); err != nil {

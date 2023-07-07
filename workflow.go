@@ -23,15 +23,15 @@ type WorkflowJob struct {
 	Driver *Driver
 }
 
-func NewWorkflow(workDir string, config Component, opts Options) (*Workflow, error) {
+func NewWorkflow(config Component, opts Options) (*Workflow, error) {
 	wf := &Workflow{
 		WorkflowJobs: map[string]*WorkflowJob{},
-		Dir:          workDir,
+		Dir:          config.Dir,
 		deps:         make(map[string][]string),
 		Options:      opts,
 	}
 
-	if err := wf.Load("", workDir, config); err != nil {
+	if err := wf.Load("", config.Dir, config); err != nil {
 		return nil, err
 	}
 

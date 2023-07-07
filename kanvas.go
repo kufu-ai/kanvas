@@ -72,7 +72,7 @@ type Kubernetes struct {
 	kargo.Config `yaml:",inline"`
 }
 
-// LoadConfigFile loads the configuration file
+// LoadConfig loads the configuration file
 // The configuration file is either a yaml or jsonnet file.
 //
 // If the file is a yaml file, it is unmarshalled into the Component struct as-is.
@@ -80,10 +80,15 @@ type Kubernetes struct {
 // The jsonnet file can be used to generate the yaml file.
 // If the file is a jsonnet file, it is compiled to json first.
 // The compiled json is then unmarshalled into the Component struct.
-func LoadConfigFile(path string) (*Component, error) {
+func LoadConfig(opts Options) (*Component, error) {
 	var (
 		config Component
 	)
+
+	path, err := DiscoverConfigFile(opts)
+	if err != nil {
+		return nil, err
+	}
 
 	file, err := os.ReadFile(path)
 	if err != nil {
@@ -103,6 +108,10 @@ func LoadConfigFile(path string) (*Component, error) {
 
 	if err := yaml.Unmarshal(file, &config); err != nil {
 		return nil, err
+	}
+
+	if config.Dir == "" {
+		config.Dir = filepath.Dir(path)
 	}
 
 	return &config, nil

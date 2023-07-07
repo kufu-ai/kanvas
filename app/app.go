@@ -5,20 +5,16 @@ import (
 	"kanvas"
 	"kanvas/interpreter"
 	"kanvas/plugin"
-	"path/filepath"
 )
 
 type App struct {
-	WorkDir string
 	Config  kanvas.Component
 	Runtime *kanvas.Runtime
 	Options kanvas.Options
 }
 
 func New(opts kanvas.Options) (*App, error) {
-	path := opts.GetConfigPath()
-
-	c, err := kanvas.LoadConfigFile(path)
+	c, err := kanvas.LoadConfig(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +22,6 @@ func New(opts kanvas.Options) (*App, error) {
 	r := kanvas.NewRuntime()
 
 	return &App{
-		WorkDir: filepath.Dir(path),
 		Config:  *c,
 		Runtime: r,
 		Options: opts,
@@ -35,7 +30,7 @@ func New(opts kanvas.Options) (*App, error) {
 }
 
 func (a *App) newWorkflow() (*kanvas.Workflow, error) {
-	return kanvas.NewWorkflow(a.WorkDir, a.Config, a.Options)
+	return kanvas.NewWorkflow(a.Config, a.Options)
 }
 
 // Diff shows the diff between the desired state and the current state

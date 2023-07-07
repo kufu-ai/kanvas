@@ -49,11 +49,8 @@ type Options struct {
 	LogsFollow bool
 }
 
-func (o Options) GetConfigPath() string {
-	if o.ConfigFile != "" {
-		return o.ConfigFile
-	}
-	return DefaultConfigFileYAML
+func (o Options) GetConfigFilePath() string {
+	return o.ConfigFile
 }
 
 func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {

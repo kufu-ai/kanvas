@@ -19,6 +19,7 @@ func TestExport(t *testing.T) {
 	}
 
 	run(t, "reference", "")
+	run(t, "jsonnet", "")
 }
 
 func run(t *testing.T, sub, env string) {
@@ -33,7 +34,6 @@ func run(t *testing.T, sub, env string) {
 
 	t.Run(name, func(t *testing.T) {
 		var (
-			configFile = filepath.Join(name, kanvas.DefaultConfigFileYAML)
 			exportsDir = filepath.Join(name, "exports")
 			destDir    = t.TempDir()
 		)
@@ -49,10 +49,13 @@ func run(t *testing.T, sub, env string) {
 			exports[f.Name()] = string(data)
 		}
 
+		wd, err := os.Getwd()
+		require.NoError(t, err)
+		require.NoError(t, os.Chdir(sub))
 		a, err := app.New(kanvas.Options{
-			ConfigFile: configFile,
-			Env:        env,
+			Env: env,
 		})
+		require.NoError(t, os.Chdir(wd))
 		require.NoError(t, err)
 
 		require.NoError(t, a.Export("githubactions", destDir, "kanvas:example"))
