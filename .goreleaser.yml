@@ -1,0 +1,18 @@
+project_name: kanvas
+env:
+builds:
+  - id: kanvas
+    main: ./cmd/kanvas
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - "386"
+changelog:
+  use: github-native
