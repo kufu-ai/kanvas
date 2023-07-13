@@ -6,14 +6,12 @@ require (
 	github.com/goccy/go-yaml v1.9.8
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/hcl/v2 v2.16.2
-	github.com/mumoshu/kargo v0.0.0-20211013110000-000000000000
+	github.com/mumoshu/kargo v0.1.0
 	github.com/projectdiscovery/yamldoc-go v1.0.4
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.2
 	go.szostok.io/version v1.1.0
 )
-
-replace github.com/mumoshu/kargo => ./kargo
 
 require (
 	cloud.google.com/go v0.102.1 // indirect
