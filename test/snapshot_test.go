@@ -13,17 +13,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type Config struct {
+	Env   string
+	Error string
+}
+
+type Option func(*Config)
+
+func Error(err string) Option {
+	return func(c *Config) {
+		c.Error = err
+	}
+}
+
+func Env(env string) Option {
+	return func(c *Config) {
+		c.Env = env
+	}
+}
+
 func TestExport(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
 
-	run(t, "reference", "")
-	run(t, "jsonnet", "")
+	run(t, "reference")
+	run(t, "jsonnet")
+	run(t, "unusedenv", Env("dev"), Error(`environment "dev" uses "missing" but it is not defined`))
 }
 
-func run(t *testing.T, sub, env string) {
+func run(t *testing.T, sub string, opts ...Option) {
 	t.Helper()
+
+	var (
+		config Config
+	)
+
+	for _, opt := range opts {
+		opt(&config)
+	}
+
+	env := config.Env
+	wantErr := config.Error
 
 	var name string
 	if env == "" {
@@ -36,17 +67,20 @@ func run(t *testing.T, sub, env string) {
 		var (
 			exportsDir = filepath.Join(name, "exports")
 			destDir    = t.TempDir()
+
+			exports = map[string]string{}
 		)
 
-		files, err := ioutil.ReadDir(exportsDir)
-		require.NoError(t, err)
-
-		exports := map[string]string{}
-		for _, f := range files {
-			fn := filepath.Join(exportsDir, f.Name())
-			data, err := os.ReadFile(fn)
+		if wantErr == "" {
+			files, err := ioutil.ReadDir(exportsDir)
 			require.NoError(t, err)
-			exports[f.Name()] = string(data)
+
+			for _, f := range files {
+				fn := filepath.Join(exportsDir, f.Name())
+				data, err := os.ReadFile(fn)
+				require.NoError(t, err)
+				exports[f.Name()] = string(data)
+			}
 		}
 
 		wd, err := os.Getwd()
@@ -58,7 +92,12 @@ func run(t *testing.T, sub, env string) {
 		require.NoError(t, os.Chdir(wd))
 		require.NoError(t, err)
 
-		require.NoError(t, a.Export("githubactions", destDir, "kanvas:example"))
+		gotErr := a.Export("githubactions", destDir, "kanvas:example")
+		if wantErr != "" {
+			require.EqualError(t, gotErr, wantErr)
+		} else {
+			require.NoError(t, gotErr)
+		}
 
 		destFiles, err := ioutil.ReadDir(destDir)
 		require.NoError(t, err)

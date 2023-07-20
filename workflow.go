@@ -95,9 +95,13 @@ func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, err
 
 	r := map[string]Component{}
 
+	usedEnvs := map[string]struct{}{}
+
 	for name, c := range config.Components {
 		if replacement, ok := env.Uses[name]; ok {
 			c = replacement
+
+			usedEnvs[name] = struct{}{}
 		}
 
 		defaults, err := DeepCopyComponent(env.Defaults)
@@ -110,6 +114,12 @@ func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, err
 		}
 
 		r[name] = c
+	}
+
+	for name, _ := range env.Uses {
+		if _, ok := usedEnvs[name]; !ok {
+			return nil, fmt.Errorf("environment %q uses %q but it is not defined", wf.Options.Env, name)
+		}
 	}
 
 	return r, nil
