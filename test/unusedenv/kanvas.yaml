@@ -1,0 +1,15 @@
+environments:
+  dev:
+    uses:
+      missing: # this needs to exist under the top-level components to be valid
+        docker:
+          image: examplecom/myapp:dev
+          file: Dockerfile.dev
+
+# Components is a map of sub-components
+components:
+    image:
+      # Docker is a docker-specific configuration
+      docker:
+          image: examplecom/myapp:canary # Image is the name of the image to be built
+          file: Dockerfile # File is the path to the Dockerfile
