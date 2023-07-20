@@ -16,3 +16,6 @@ builds:
       - "386"
 changelog:
   use: github-native
+
+release:
+  prerelease: auto
