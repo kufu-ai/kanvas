@@ -1,0 +1,121 @@
+# kanvasexample-infra
+$ tree -n -I .git -I 'doc*' -L 3 . --noreport
+
+.
+├── Dockerfile
+├── Makefile
+├── packer
+│   ├── build.pkr.hcl
+│   ├── playbook.yaml
+│   ├── provider.pkr.hcl
+│   ├── README.md
+│   ├── source.pkr.hcl
+│   └── variables.pkr.hcl
+├── README.md
+└── terraform
+    └── README.md
+
+# kanvasexample-api
+$ tree -n -I .git -I '*.jbuilder' -I tmp -I vendor --noreport -L 4 .
+
+.
+├── app
+│   ├── channels
+│   │   └── application_cable
+│   │       ├── channel.rb
+│   ├── controllers
+│   │   ├── admin
+│   │   │   ├── account_controller.rb
+│   │   │   ├── application_controller.rb
+│   │   │   ├── auth_controller.rb
+│   │   │   └── notification_controller.rb
+│   │   ├── application_controller.rb
+│   │   ├── concerns
+│   │   └── media
+│   │       └── application_controller.rb
+│   ├── helpers
+│   │   └── admin_url_helper.rb
+│   ├── jobs
+│   │   └── application_job.rb
+│   ├── mailers
+│   │   ├── admin
+│   │   │   ├── account_mailer.rb
+│   │   │   └── application_mailer.rb
+│   │   └── media
+│   │       └── application_mailer.rb
+│   ├── models
+│   │   ├── account.rb
+│   │   └── user.rb
+│   └── views
+│       ├── admin
+│       ├── layouts
+│       └── media
+├── bin
+│   ├── bundle
+│   ├── rails
+│   ├── rake
+│   └── setup
+├── config
+│   ├── application.rb
+│   ├── boot.rb
+│   ├── cable.yml
+│   ├── credentials.yml.enc
+│   ├── database.yml
+│   ├── environment.rb
+│   ├── environments
+│   │   ├── development.rb
+│   │   ├── production.rb
+│   │   └── test.rb
+│   ├── initializers
+│   │   ├── aws.rb
+│   │   ├── config.rb
+│   │   ├── cors.rb
+│   │   ├── filter_parameter_logging.rb
+│   │   ├── inflections.rb
+│   │   └── locales.rb
+│   ├── locales
+│   │   ├── ja.yml
+│   │   └── translation_ja.yml
+│   ├── puma.rb
+│   ├── routes.rb
+│   ├── settings
+│   │   ├── development.yml
+│   │   ├── production.yml
+│   │   └── test.yml
+│   ├── settings.yml
+│   └── storage.yml
+├── config.ru
+├── db
+│   └── seeds.rb
+├── docker-compose.yml
+├── Gemfile
+├── Gemfile.lock
+├── lib
+│   └── tasks
+│       └── ridgepole.rake
+├── log
+├── openapi
+│   ├── admin.json
+│   └── media.json
+├── public
+│   └── robots.txt
+├── Rakefile
+├── README.md
+├── Schemafile
+├── spec
+│   ├── factories
+│   │   └── accounts.rb
+│   ├── images
+│   │   ├── avatar.jpg
+│   │   └── avatar.png
+│   ├── rails_helper.rb
+│   ├── requests
+│   │   └── admin
+│   │       └── auth
+│   ├── spec_helper.rb
+│   └── support
+│       └── login_helper.rb
+├── storage
+└── tmp
+    ├── pids
+    └── storage

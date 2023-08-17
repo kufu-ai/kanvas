@@ -1,0 +1,2 @@
+- github.com/kanvasexample/kanvasexample-api
+- github.com/kanvasexample/kanvasexample-infra
