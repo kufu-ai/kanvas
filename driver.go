@@ -47,6 +47,8 @@ type Options struct {
 	Env        string
 	ConfigFile string
 	LogsFollow bool
+	// UseAI enables AI to suggest a kanvas.yaml file content based on your environment.
+	UseAI bool
 }
 
 func (o Options) GetConfigFilePath() string {

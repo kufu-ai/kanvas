@@ -22,7 +22,7 @@ func (t *customTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	// This is for peventing the SSE client from infinitely retrying requests that end up with 400 Bad Request.
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("unexpected status code: %d", req.Response.StatusCode)
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	return resp, err

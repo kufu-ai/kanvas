@@ -1,4 +1,4 @@
-package openaichat
+package configai
 
 import (
 	"bytes"
@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"kanvas/openaichat"
+	"os"
 	"sync"
 )
+
+var APIKey = os.Getenv("OPENAI_API_KEY")
 
 const (
 	TEMPLATE = `You are who recommends a configuration for a tool called kanvas. Kanvas is the tool that abstracts the usages of various Infra-as-Code toolks like Terraform, Docker, ArgoCD. Kanvas's configuration file is named kanvas.yaml. A reference kanvas.yaml looks like the below.
@@ -123,6 +126,9 @@ func WithLog(log io.Writer) SuggestOption {
 
 func (c *ConfigRecommender) Suggest(repos, contents string, opt ...SuggestOption) (*string, error) {
 	c.once.Do(func() {
+		if c.APIKey == "" {
+			c.APIKey = APIKey
+		}
 		c.client = &openaichat.Client{APIKey: c.APIKey}
 	})
 

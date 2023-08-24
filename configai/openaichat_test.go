@@ -1,4 +1,4 @@
-package openaichat
+package configai
 
 import (
 	"bytes"
@@ -7,8 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 )
-
-var APIKey = os.Getenv("OPENAI_API_KEY")
 
 func TestSuggest(t *testing.T) {
 	if APIKey == "" {

@@ -3,7 +3,10 @@ package app
 import (
 	"fmt"
 	"kanvas"
+	"kanvas/configai"
+	"kanvas/ghrepos"
 	"os"
+	"strings"
 
 	"github.com/projectdiscovery/yamldoc-go/encoder"
 )
@@ -18,9 +21,20 @@ func (a *App) New() error {
 	args := generateArgs{
 		Dir: wd,
 	}
-	data, err := a.generateConfigData(args)
-	if err != nil {
-		return err
+
+	var data []byte
+
+	if a.Options.UseAI {
+		println("Using AI to generate kanvas.yaml...")
+		data, err = a.generateConfigDataUsingAI(args)
+		if err != nil {
+			return err
+		}
+	} else {
+		data, err = a.generateConfigData(args)
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Fprintf(os.Stdout, "%s", string(data))
@@ -68,4 +82,26 @@ func (a *App) generateConfigData(args generateArgs) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func (a *App) generateConfigDataUsingAI(args generateArgs) ([]byte, error) {
+	c := &configai.ConfigRecommender{}
+
+	projectRoot := args.Dir
+
+	s := &ghrepos.Summarizer{}
+	summary, err := s.Summarize(projectRoot)
+	if err != nil {
+		return nil, err
+	}
+
+	contents := strings.Join(summary.Contents, "\n")
+	repos := strings.Join(summary.Repos, "\n")
+
+	kanvasConfigYAML, err := c.Suggest(string(contents), string(repos), configai.WithUseFun(true), configai.WithLog(os.Stderr))
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(*kanvasConfigYAML), nil
 }

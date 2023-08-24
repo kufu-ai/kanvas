@@ -64,11 +64,23 @@ func (c *Client) Complete(messages []Message, funcs []Function, opts ...Option) 
 	}
 
 	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error making request: %w", err)
+
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
 	}
 
-	defer resp.Body.Close()
+	if err != nil {
+		var message string
+		if resp != nil && resp.Body != nil {
+			data, readErr := io.ReadAll(resp.Body)
+			if readErr != nil {
+				return nil, fmt.Errorf("error making request: %w\nerror reading response body: %w", err, readErr)
+			}
+			message = string(data)
+		}
+
+		return nil, fmt.Errorf("error making request: %w: %s", err, message)
+	}
 
 	var chatCompletionRes ChatCompletionResponse
 	var buf bytes.Buffer
@@ -131,6 +143,8 @@ func (c *Client) SSE(messages []Message, funcs []Function, opts ...Option) (*SSE
 
 	var choices []Choice
 
+	fmt.Fprintf(logOut, "Submitted the prompt to the AI...\n")
+
 	eg.Go(func() error {
 		defer close(errCh)
 		return sseClient.SubscribeRawWithContext(ctx, func(msg *sse.Event) {
@@ -148,7 +162,7 @@ func (c *Client) SSE(messages []Message, funcs []Function, opts ...Option) (*SSE
 			}
 
 			if logOut != nil {
-				fmt.Fprintf(logOut, "%s\n", string(msg.Data))
+				fmt.Fprintf(logOut, "AI is thinking: %s\n", string(msg.Data))
 			}
 
 			if l := len(chatCompletionRes.Choices); l != 1 {
