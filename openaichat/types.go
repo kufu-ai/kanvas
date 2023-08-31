@@ -9,6 +9,17 @@ type ChatCompletionResponse struct {
 	Created int64    `json:"created"`
 	Model   string   `json:"model"`
 	Choices []Choice `json:"choices"`
+	Error   *Error   `json:"error,omitempty"`
+}
+
+type Error struct {
+	Message string `json:"message"`
+	// like "invalid_request_error"
+	Type string `json:"type"`
+	// like "messages"
+	Param string `json:"param"`
+	// like "context_length_exceeded"
+	Code string `json:"code"`
 }
 
 type Choice struct {

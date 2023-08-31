@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -55,6 +57,87 @@ type Summary struct {
 	Contents []string
 }
 
+type Tree struct {
+	Label string
+	Files []string
+	Trees map[string]*Tree
+}
+
+func (t *Tree) Add(path string) {
+	if path == "" {
+		return
+	}
+
+	if t.Trees == nil {
+		t.Trees = map[string]*Tree{}
+	}
+
+	splits := strings.SplitN(path, string(os.PathSeparator), 2)
+	if len(splits) == 1 {
+		t.Files = append(t.Files, path)
+		return
+	}
+	label := splits[0]
+	nextPath := splits[1]
+
+	sub, ok := t.Trees[label]
+	if !ok {
+		sub = &Tree{
+			Label: label,
+			Trees: map[string]*Tree{},
+		}
+		t.Trees[label] = sub
+	}
+
+	sub.Add(nextPath)
+}
+
+func (t *Tree) String() string {
+	return t.getStringRepr(0)
+}
+
+// getStringRepr returns a string representation of the tree.
+func (t *Tree) getStringRepr(depth int) string {
+	var b strings.Builder
+
+	b.WriteString(t.Label)
+	b.WriteString("\n")
+
+	var i int
+
+	var treeNames []string
+
+	for name := range t.Trees {
+		treeNames = append(treeNames, name)
+	}
+
+	sort.Strings(treeNames)
+
+	for _, name := range treeNames {
+		sub := t.Trees[name]
+		for i := 0; i < depth; i++ {
+			b.WriteString("  ")
+		}
+
+		b.WriteString("+ ")
+		b.WriteString(sub.getStringRepr(depth + 1))
+
+		i++
+	}
+
+	for _, sub := range t.Files {
+		for i := 0; i < depth; i++ {
+			b.WriteString("  ")
+		}
+
+		b.WriteString("* ")
+		b.WriteString(sub)
+		b.WriteString("\n")
+	}
+
+	return b.String()
+}
+
 func (c *Summarizer) Summarize(workspace string) (*Summary, error) {
 	if workspace == "" {
 		workspace = ProjectRoot
@@ -70,11 +153,7 @@ func (c *Summarizer) Summarize(workspace string) (*Summary, error) {
 	for _, content := range contents {
 		summary.Repos = append(summary.Repos, content.Repo.GetName())
 
-		var contentStr string
-		contentStr += fmt.Sprintf("%s\n", content.Repo.GetName())
-		for _, file := range content.Files {
-			contentStr += fmt.Sprintf("  %s\n", file)
-		}
+		contentStr := content.Root.String()
 
 		summary.Contents = append(summary.Contents, contentStr)
 	}
@@ -212,6 +291,7 @@ func (c *Summarizer) getPossiblyRelatedRepoContents(workspace string) ([]RepoCon
 type RepoContent struct {
 	Repo  *github.Repository
 	Files []string
+	Root  *Tree
 }
 
 func (c *Summarizer) getRepoContents(repos []*github.Repository) ([]RepoContent, error) {
@@ -240,18 +320,32 @@ func (c *Summarizer) getRepoContents(repos []*github.Repository) ([]RepoContent,
 		}
 
 		numEntries := len(tree.Entries)
-		var files []string
-		for j, entry := range tree.Entries {
-			fmt.Fprintf(os.Stderr, "    Processing tree entry: %s (%d/%d)\n", entry.GetPath(), j+1, numEntries)
-
-			if entry.GetType() == "blob" {
-				files = append(files, entry.GetPath())
+		var (
+			files []string
+			root  = &Tree{
+				Label: repo.GetName(),
 			}
+			numNodes int
+		)
+		for j, entry := range tree.Entries {
+			fmt.Fprintf(os.Stderr, "    Processing tree entry: %s %s (%d/%d)\n", entry.GetPath(), entry.GetType(), j+1, numEntries)
+
+			if entry.GetType() == "blob" && filepath.Ext(entry.GetPath()) == ".tf" {
+				files = append(files, entry.GetPath())
+				root.Add(entry.GetPath())
+				numNodes++
+			}
+		}
+
+		if numNodes == 0 {
+			fmt.Fprintf(os.Stderr, "  Skipping empty repository: %s\n", repo.GetName())
+			continue
 		}
 
 		repoContents = append(repoContents, RepoContent{
 			Repo:  repo,
 			Files: files,
+			Root:  root,
 		})
 	}
 

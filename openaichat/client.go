@@ -38,7 +38,7 @@ func WithLog(log io.Writer) Option {
 }
 
 func (c *Client) Complete(messages []Message, funcs []Function, opts ...Option) (*Result, error) {
-	client := c.newHTTPClient()
+	client := c.newHTTPClient(false)
 
 	var config Config
 	for _, opt := range opts {
@@ -70,16 +70,7 @@ func (c *Client) Complete(messages []Message, funcs []Function, opts ...Option) 
 	}
 
 	if err != nil {
-		var message string
-		if resp != nil && resp.Body != nil {
-			data, readErr := io.ReadAll(resp.Body)
-			if readErr != nil {
-				return nil, fmt.Errorf("error making request: %w\nerror reading response body: %w", err, readErr)
-			}
-			message = string(data)
-		}
-
-		return nil, fmt.Errorf("error making request: %w: %s", err, message)
+		return nil, fmt.Errorf("error making request: %w", err)
 	}
 
 	var chatCompletionRes ChatCompletionResponse
@@ -88,6 +79,10 @@ func (c *Client) Complete(messages []Message, funcs []Function, opts ...Option) 
 	err = json.NewDecoder(io.TeeReader(resp.Body, &buf)).Decode(&chatCompletionRes)
 	if err != nil {
 		return nil, fmt.Errorf("error decoding response body: %w", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("unexpected status code: %d: %s", resp.StatusCode, *chatCompletionRes.Error)
 	}
 
 	if logOut != nil {
@@ -110,7 +105,7 @@ func (c *Client) Complete(messages []Message, funcs []Function, opts ...Option) 
 }
 
 func (c *Client) SSE(messages []Message, funcs []Function, opts ...Option) (*SSEResult, error) {
-	client := c.newHTTPClient()
+	client := c.newHTTPClient(true)
 
 	var config Config
 	for _, opt := range opts {
@@ -194,11 +189,12 @@ func (c *Client) SSE(messages []Message, funcs []Function, opts ...Option) (*SSE
 	}, nil
 }
 
-func (c *Client) newHTTPClient() *http.Client {
+func (c *Client) newHTTPClient(treatNon200Error bool) *http.Client {
 	return &http.Client{
 		Transport: &customTransport{
-			RoundTripper: http.DefaultTransport,
-			BearerToken:  c.APIKey,
+			RoundTripper:     http.DefaultTransport,
+			BearerToken:      c.APIKey,
+			TreatNon200Error: treatNon200Error,
 		},
 	}
 }
