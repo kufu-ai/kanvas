@@ -8,6 +8,7 @@ import (
 	"kanvas/openaichat"
 	"os"
 	"sync"
+	"time"
 )
 
 var APIKey = os.Getenv("OPENAI_API_KEY")
@@ -178,10 +179,22 @@ func (c *ConfigRecommender) Suggest(repos, contents string, opt ...SuggestOption
 	}
 
 	if !sse {
+		fmt.Fprintf(os.Stderr, "Starting to generate kanvas.yaml...\n")
+
+		// Measure the time to complete the request.
+
+		start := time.Now()
+
 		r, err := c.client.Complete(messages, funcs, openaichat.WithLog(out))
 		if err != nil {
 			return nil, err
 		}
+
+		end := time.Now()
+
+		// Print the time to complete the request.
+		duration := end.Sub(start)
+		fmt.Fprintf(os.Stderr, "Completed to generate kanvas.yaml in %s\n", duration)
 
 		if useFun {
 			if r.Choice.FinishReason != "function_call" {
