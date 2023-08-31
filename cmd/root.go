@@ -28,9 +28,7 @@ func Root() *cobra.Command {
 		Short: "Creates a new kanvas.yaml file",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
-			return run(cmd, opts, func(a *app.App) error {
-				return a.New()
-			})
+			return app.NewConfig(&opts)
 		},
 	}
 	new.Flags().BoolVarP(&opts.UseAI, "use-ai", "a", false, "Use AI to suggest a kanvas.yaml file content based on your environment")

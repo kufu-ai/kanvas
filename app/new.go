@@ -12,7 +12,7 @@ import (
 )
 
 // New generates a new kanvas.yaml from all the comments and the default settings.
-func (a *App) New() error {
+func NewConfig(opts *kanvas.Options) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -24,14 +24,14 @@ func (a *App) New() error {
 
 	var data []byte
 
-	if a.Options.UseAI {
+	if opts.UseAI {
 		println("Using AI to generate kanvas.yaml...")
-		data, err = a.generateConfigDataUsingAI(args)
+		data, err = generateConfigDataUsingAI(args)
 		if err != nil {
 			return err
 		}
 	} else {
-		data, err = a.generateConfigData(args)
+		data, err = generateConfigData(args)
 		if err != nil {
 			return err
 		}
@@ -39,7 +39,7 @@ func (a *App) New() error {
 
 	fmt.Fprintf(os.Stdout, "%s", string(data))
 
-	f := a.Options.GetConfigFilePath()
+	f := opts.GetConfigFilePath()
 	if f == "" {
 		f = kanvas.DefaultConfigFileYAML
 	}
@@ -63,7 +63,7 @@ type generateArgs struct {
 	Dir string
 }
 
-func (a *App) generateConfigData(args generateArgs) ([]byte, error) {
+func generateConfigData(args generateArgs) ([]byte, error) {
 	encoder := encoder.NewEncoder(&kanvas.Component{
 		Components: map[string]kanvas.Component{
 			"image": {
@@ -84,7 +84,7 @@ func (a *App) generateConfigData(args generateArgs) ([]byte, error) {
 	return data, nil
 }
 
-func (a *App) generateConfigDataUsingAI(args generateArgs) ([]byte, error) {
+func generateConfigDataUsingAI(args generateArgs) ([]byte, error) {
 	c := &configai.ConfigRecommender{}
 
 	projectRoot := args.Dir
