@@ -100,6 +100,16 @@ func generateConfigDataUsingAI(args generateArgs) ([]byte, error) {
 
 	kanvasConfigYAML, err := c.Suggest(string(contents), string(repos), configai.WithUseFun(true), configai.WithLog(os.Stderr))
 	if err != nil {
+		if os.Getenv("KANVAS_DEBUG") != "" {
+			// Dumps the contents and repos to respective files for debugging
+			fmt.Fprintf(os.Stderr, "Writing contents.txt and repos.txt for debugging...\n")
+			if err := os.WriteFile("contents.txt", []byte(contents), 0644); err != nil {
+				return nil, fmt.Errorf("error writing contents.txt: %w", err)
+			}
+			if err := os.WriteFile("repos.txt", []byte(repos), 0644); err != nil {
+				return nil, fmt.Errorf("error writing repos.txt: %w", err)
+			}
+		}
 		return nil, err
 	}
 
