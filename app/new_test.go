@@ -31,12 +31,10 @@ func run(t *testing.T, name string) {
 			Dir: filepath.Join("testdata", name),
 		}
 
-		a := &App{}
-
 		want, err := os.ReadFile(wantedConfigFile)
 		require.NoError(t, err)
 
-		got, err := a.generateConfigData(args)
+		got, err := generateConfigData(args)
 		require.NoError(t, err)
 		assert.Equal(t, string(want), string(got))
 
