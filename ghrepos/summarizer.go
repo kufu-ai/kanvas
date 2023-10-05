@@ -148,10 +148,17 @@ func (c *Summarizer) Summarize(workspace string) (*Summary, error) {
 		return nil, err
 	}
 
-	var summary Summary
+	var (
+		projectName = filepath.Base(workspace)
+		summary     Summary
+	)
 
 	for _, content := range contents {
-		summary.Repos = append(summary.Repos, content.Repo.GetName())
+		repo := content.Repo.GetName()
+		if repo == projectName {
+			repo += " (this project)"
+		}
+		summary.Repos = append(summary.Repos, repo)
 
 		contentStr := content.Root.String()
 
@@ -185,19 +192,25 @@ func (c *Summarizer) getPossiblyRelatedRepoContents(workspace string) ([]RepoCon
 	}
 
 	url := origin.URLs[0]
-	// git@github.com:davinci-std/kajero.git"
+	// git@github.com:davinci-std/exampleapp.git"
 	urlParts := strings.Split(url, ":")
 	if len(urlParts) != 2 {
 		return nil, fmt.Errorf("unexpected url: %s", url)
 	}
 
+	// davinci-std/exampleapp.git"
 	userRepoStr := urlParts[1]
 	userRepo := strings.Split(userRepoStr, "/")
 	if len(urlParts) != 2 {
 		return nil, fmt.Errorf("unexpected url: %s", url)
 	}
 
+	// davinci-std
 	org := userRepo[0]
+	// exampleapp.git
+	repo := userRepo[1]
+	// exampleapp
+	repo = strings.TrimSuffix(repo, ".git")
 
 	var (
 		allRepos []*github.Repository
@@ -247,11 +260,6 @@ func (c *Summarizer) getPossiblyRelatedRepoContents(workspace string) ([]RepoCon
 
 	var possibilyRelevantRepos []*github.Repository
 	for _, repo := range allRepos {
-		// Skip the repository if it's the same as the target repository
-		if repo.GetName() == userRepo[1] {
-			continue
-		}
-
 		// Skip the repository if it's archived
 		if repo.GetArchived() {
 			continue
@@ -280,7 +288,7 @@ func (c *Summarizer) getPossiblyRelatedRepoContents(workspace string) ([]RepoCon
 		possibilyRelevantRepos = append(possibilyRelevantRepos, repo)
 	}
 
-	contents, err := c.getRepoContents(possibilyRelevantRepos)
+	contents, err := c.getRepoContents(possibilyRelevantRepos, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +302,7 @@ type RepoContent struct {
 	Root  *Tree
 }
 
-func (c *Summarizer) getRepoContents(repos []*github.Repository) ([]RepoContent, error) {
+func (c *Summarizer) getRepoContents(repos []*github.Repository, projectRepo string) ([]RepoContent, error) {
 	client := c.getGitHubClient()
 
 	numRepos := len(repos)
@@ -330,10 +338,15 @@ func (c *Summarizer) getRepoContents(repos []*github.Repository) ([]RepoContent,
 		for j, entry := range tree.Entries {
 			fmt.Fprintf(os.Stderr, "    Processing tree entry: %s %s (%d/%d)\n", entry.GetPath(), entry.GetType(), j+1, numEntries)
 
-			if entry.GetType() == "blob" && filepath.Ext(entry.GetPath()) == ".tf" {
-				files = append(files, entry.GetPath())
-				root.Add(entry.GetPath())
-				numNodes++
+			if entry.GetType() == "blob" {
+				path := entry.GetPath()
+				ext := filepath.Ext(path)
+				repo := repo.GetName()
+				if ext == ".tf" || (repo == projectRepo && strings.Contains(path, "Dockerfile")) {
+					files = append(files, entry.GetPath())
+					root.Add(entry.GetPath())
+					numNodes++
+				}
 			}
 		}
 

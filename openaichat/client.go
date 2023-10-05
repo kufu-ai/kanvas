@@ -49,7 +49,7 @@ func (c *Client) Complete(messages []Message, funcs []Function, opts ...Option) 
 
 	reqBody := ChatCompletionRequest{
 		Messages:  messages,
-		Model:     "gpt-3.5-turbo",
+		Model:     "gpt-3.5-turbo-16k",
 		Stream:    false,
 		Functions: funcs,
 	}

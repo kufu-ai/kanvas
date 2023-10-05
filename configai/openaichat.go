@@ -19,41 +19,59 @@ const (
 --start of kanvas.yaml--
 
 components:
-	product1:
-	components:
-		appimage:
-		dir: /containerimages/app
-		docker:
-			image: "davinci-std/example:myownprefix-"
-		base:
-		dir: /tf2
-		needs:
-		- appimage
-		terraform:
-			target: null_resource.eks_cluster
-			vars:
-			- name: containerimage_name
-			valueFrom: appimage.id
-		argocd:
-		dir: /tf2
-		needs:
-		- base
-		terraform:
-			target: aws_alb.argocd_api
-			vars:
-			- name: cluster_endpoint
-			valueFrom: base.cluster_endpoint
-			- name: cluster_token
-			valueFrom: base.cluster_token
-		argocd_resources:
-		# only path relative to where the command has run is supported
-		# maybe the top-project-level "dir" might be supported in the future
-		# which in combination with the relative path support for sub-project dir might be handy for DRY
-		dir: /tf2
-		needs:
-		- argocd
-		terraform:
-			target: argocd_application.kanvas
+  appimage:
+    # The repo is the GitHub repository where files for the component is located.
+    # This is usually omitted if the Dockerfile is located in the same repository as the kanvas.yaml.
+    #repo: davinci-std/exampleapp
+	# The dir is the directory where Dockerfile and the docker build context is located.
+	# If the dockerfile is at container/images/app/Dockerfile, the dir is container/images/app.
+    dir: containerimages/app
+    docker:
+	  # The image is the name and the tag prefix of the container image to be built and pushed by kanvas.
+      image: "davinci-std/example:myownprefix-"
+  # base is a common component that is used to represent the cloud infrastructure.
+  # It often refers to a Terraform module that creates a Kubernetes cluster and its dependencies.
+  base:
+    # The repo is the GitHub repository where files for the component is located.
+	# For the base component, the repo usually contains a Terraform module that creates a Kubernetes cluster and its dependencies.
+	# It must be in ORG/REPO format.
+	# If ORG is not present, you can omit it.
+    repo: davinci-std/myinfra
+	# The dir is the directory where files for the component is located.
+	# This is the directory where the Terraform module for the specific environment (like development) is located.
+	# If the *.tf files are located in the path/to/exampleapp/terraform/module/*.tf, the dir is path/to/exampleapp/terraform/module.
+    dir: path/to/exampleapp/terraform/module
+    needs:
+    - appimage
+    terraform:
+      target: null_resource.eks_cluster
+      vars:
+      - name: containerimage_name
+        valueFrom: appimage.id
+  # argocd component exists only when you deploy your apps to Kubernetes clusters
+  # using ArgoCD, and you want to manage ArgoCD resources using kanvas.
+  # If you don't use ArgoCD, you can omit this component.
+  argocd:
+    # This is the directory where the Terraform module for ArgoCD is located.
+    dir: /tf2
+    needs:
+    - base
+    terraform:
+      target: aws_alb.argocd_api
+      vars:
+      - name: cluster_endpoint
+        valueFrom: base.cluster_endpoint
+      - name: cluster_token
+        valueFrom: base.cluster_token
+  argocd_resources:
+    # only path relative to where the command has run is supported
+    # maybe the top-project-level "dir" might be supported in the future
+    # which in combination with the relative path support for sub-project dir might be handy for DRY
+    dir: /tf2
+    needs:
+    - argocd
+    terraform:
+      target: argocd_application.kanvas
 
 --end of kanvas.yaml--
 
