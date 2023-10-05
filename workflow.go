@@ -64,7 +64,7 @@ func (wf *Workflow) Load(path, baseDir string, config Component) error {
 		midLevels = append(midLevels, level)
 	}
 
-	// Replace the top-level components with the mid-level ones.
+	// Replace the top-level components with the mid-level ones, if any.
 	// The mid-level components are the ones that actually contain
 	// "run" fields to be executed.
 	// Top-level components are just for grouping hence they don't
@@ -76,7 +76,9 @@ func (wf *Workflow) Load(path, baseDir string, config Component) error {
 	// After : plan = [][]string len: 4, cap: 4, [["/product1/appimage"],["/product1/base"],["/product1/argocd"],["/product1/argocd_resources"]]
 	//
 	// Notice that the top-level component "product1" is removed.
-	plan[0] = midLevels
+	if len(midLevels) > 0 {
+		plan[0] = midLevels
+	}
 
 	wf.Plan = plan
 
