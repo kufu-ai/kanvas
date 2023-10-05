@@ -55,6 +55,14 @@ func (o Options) GetConfigFilePath() string {
 	return o.ConfigFile
 }
 
+func concat(a ...[]interface{}) []interface{} {
+	var r []interface{}
+	for _, s := range a {
+		r = append(r, s...)
+	}
+	return r
+}
+
 func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 	output := func(format string) []string {
 		return append([]string{
@@ -71,10 +79,14 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 		if dockerfile == "" {
 			dockerfile = "Dockerfile"
 		}
+		buildArgs := []interface{}{"build"}
+		for name, value := range c.Docker.Args {
+			buildArgs = append(buildArgs, "--build-arg", fmt.Sprintf("%s=%s", name, value))
+		}
 		dockerBuild := cmd.New(
 			"docker-build",
 			"docker",
-			cmd.Args("build", "-t", image, "-f", dockerfile, "."),
+			cmd.Args(concat(buildArgs, []interface{}{"-t", image, "-f", dockerfile, "."})...),
 			cmd.Dir(dir),
 		)
 		dockerPush := cmd.New(
@@ -85,7 +97,7 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 		dockerBuildxPush := cmd.New(
 			"docker-buildx-push",
 			"docker",
-			cmd.Args("build", "--load", "--platform", "linux/amd64", "-t", image, "-f", dockerfile, "."),
+			cmd.Args(concat(buildArgs, []interface{}{"--load", "--platform", "linux/amd64", "-t", image, "-f", dockerfile, "."})...),
 		)
 		dockerBuildXCheckAvailability := Step(Task{
 			OutputFunc: func(r *Runtime, o map[string]string) error {

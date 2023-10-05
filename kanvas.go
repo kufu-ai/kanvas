@@ -45,7 +45,8 @@ type Docker struct {
 	// Image is the name of the image to be built
 	Image string `yaml:"image"`
 	// File is the path to the Dockerfile
-	File string `yaml:"file"`
+	File string            `yaml:"file"`
+	Args map[string]string `yaml:"args"`
 }
 
 // Terraform is a terraform-specific configuration
