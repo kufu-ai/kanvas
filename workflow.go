@@ -98,9 +98,11 @@ func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, err
 	r := map[string]Component{}
 
 	usedEnvs := map[string]struct{}{}
+	overrodeEnvs := map[string]struct{}{}
 
 	for name, c := range config.Components {
-		if replacement, ok := env.Uses[name]; ok {
+		replacement, replaced := env.Uses[name]
+		if replaced {
 			c = replacement
 
 			usedEnvs[name] = struct{}{}
@@ -115,12 +117,28 @@ func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, err
 			return nil, err
 		}
 
+		overrides, overrode := env.Overrides[name]
+		if overrode {
+			overrodeEnvs[name] = struct{}{}
+			if err := mergo.Merge(defaults, overrides, mergo.WithOverride); err != nil {
+				return nil, fmt.Errorf("unable to override component %q: %w", name, err)
+			}
+		}
+
+		if replaced && overrode {
+			return nil, fmt.Errorf("component %q is both used and overridden. You can only use or override a component", name)
+		}
+
 		r[name] = c
 	}
 
 	for name, _ := range env.Uses {
 		if _, ok := usedEnvs[name]; !ok {
 			return nil, fmt.Errorf("environment %q uses %q but it is not defined", wf.Options.Env, name)
+		}
+
+		if _, ok := overrodeEnvs[name]; !ok {
+			return nil, fmt.Errorf("environment %q overrides %q but it is not defined", wf.Options.Env, name)
 		}
 	}
 

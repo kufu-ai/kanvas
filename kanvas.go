@@ -38,6 +38,8 @@ type Environment struct {
 	Defaults Component `yaml:"defaults,omitempty"`
 	// Uses is a set of sub-components to replace the defaults
 	Uses map[string]Component `yaml:"uses,omitempty"`
+	// Overrides is a set of sub-components to override the env and component defaults
+	Overrides map[string]Component `yaml:"overrides,omitempty"`
 }
 
 // Docker is a docker-specific configuration
