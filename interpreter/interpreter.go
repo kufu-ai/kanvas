@@ -107,7 +107,7 @@ func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, op kanvas.Op, steps []kan
 
 		for _, c := range step.Run {
 			if err := p.runCmd(j, c); err != nil {
-				return err
+				return fmt.Errorf("command %s: %w", c, err)
 			}
 		}
 

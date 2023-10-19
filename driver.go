@@ -47,6 +47,10 @@ type Options struct {
 	Env        string
 	ConfigFile string
 	LogsFollow bool
+	// TempDir is the directory to store temporary files such as the generated Kubernetes manifests
+	// or modified copy of a Git repository to be deployed via GitOps.
+	// Although this is under the "Options", it is not optional as of today.
+	TempDir string
 	// UseAI enables AI to suggest a kanvas.yaml file content based on your environment.
 	UseAI bool
 }
@@ -89,6 +93,11 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			cmd.Args(concat(buildArgs, []interface{}{"-t", image, "-f", dockerfile, "."})...),
 			cmd.Dir(dir),
 		)
+		dockerBuildxLoad := cmd.New(
+			"docker-buildx-push",
+			"docker",
+			cmd.Args(concat(buildArgs, []interface{}{"--load", "--platform", "linux/amd64", "-t", image, "-f", dockerfile, "."})...),
+		)
 		dockerPush := cmd.New(
 			"docker-push",
 			"docker",
@@ -97,7 +106,7 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 		dockerBuildxPush := cmd.New(
 			"docker-buildx-push",
 			"docker",
-			cmd.Args(concat(buildArgs, []interface{}{"--load", "--platform", "linux/amd64", "-t", image, "-f", dockerfile, "."})...),
+			cmd.Args(concat(buildArgs, []interface{}{"--push", "--platform", "linux/amd64", "-t", image, "-f", dockerfile, "."})...),
 		)
 		dockerBuildXCheckAvailability := Step(Task{
 			OutputFunc: func(r *Runtime, o map[string]string) error {
@@ -129,9 +138,29 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 				dockerPush,
 			},
 		})
+		dockerBuildXBuildLoadIfAvailable := Step(Task{
+			IfOutputEq: IfOutputEq{
+				Key:   "kanvas.buildx",
+				Value: "true",
+			},
+			Run: []kargo.Cmd{
+				dockerBuildxLoad,
+			},
+		})
+		dockerBuildIfBuildxNotAvailable := Step(Task{
+			IfOutputEq: IfOutputEq{
+				Key:   "kanvas.buildx",
+				Value: "false",
+			},
+			Run: []kargo.Cmd{
+				dockerBuild,
+			},
+		})
 		return &Driver{
 			Diff: Seq(
-				cmdToStep(dockerBuild),
+				dockerBuildXCheckAvailability,
+				dockerBuildXBuildLoadIfAvailable,
+				dockerBuildIfBuildxNotAvailable,
 			),
 			Apply: Seq(
 				dockerBuildXCheckAvailability,
@@ -256,6 +285,10 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			},
 		}, nil
 	} else if c.Kubernetes != nil {
+		if opts.TempDir == "" {
+			return nil, fmt.Errorf("invalid kubernetes component: TempDir is not set")
+		}
+
 		var (
 			name = c.Kubernetes.Name
 		)
@@ -277,6 +310,7 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			},
 			TailLogs:     opts.LogsFollow,
 			ToolsCommand: []string{"kanvas", "tools"},
+			TempDir:      opts.TempDir,
 		}
 
 		diff, err := g.ExecCmds(&c.Kubernetes.Config, kargo.Plan)
@@ -326,6 +360,9 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			},
 		}, nil
 	} else {
+		if len(c.Components) == 0 {
+			return nil, fmt.Errorf("invalid component: this component has no driver or components")
+		}
 		return &Driver{
 			Diff:   Seq(),
 			Apply:  Seq(),

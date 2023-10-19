@@ -5,6 +5,8 @@ import (
 	"kanvas"
 	"kanvas/interpreter"
 	"kanvas/plugin"
+	"os"
+	"time"
 )
 
 type App struct {
@@ -14,6 +16,15 @@ type App struct {
 }
 
 func New(opts kanvas.Options) (*App, error) {
+	// ts is a timestamp in the format of YYYYMMDDHHMMSS
+	now := time.Now()
+	ts := now.Format("20060102150405")
+	tempDir, err := os.MkdirTemp("", fmt.Sprintf("kanvas_%s_*", ts))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create temp dir: %w", err)
+	}
+	opts.TempDir = tempDir
+
 	c, err := kanvas.LoadConfig(opts)
 	if err != nil {
 		return nil, err
