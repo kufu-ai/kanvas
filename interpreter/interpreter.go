@@ -164,7 +164,12 @@ func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
 		dir = j.Dir
 	}
 
-	if err := p.runtime.Exec(dir, c); err != nil {
+	var opts []kanvas.ExecOption
+	if len(cmd.AddEnv) > 0 {
+		opts = append(opts, kanvas.ExecAddEnv(cmd.AddEnv))
+	}
+
+	if err := p.runtime.Exec(dir, c, opts...); err != nil {
 		return fmt.Errorf("command %q: %w", cmd.Name, err)
 	}
 

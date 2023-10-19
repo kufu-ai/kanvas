@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"kanvas"
 	"kanvas/app"
 	"kanvas/build"
 	"kanvas/plugin"
+
+	kargotools "github.com/mumoshu/kargo/tools"
 
 	"github.com/spf13/cobra"
 )
@@ -100,6 +103,41 @@ func Root() *cobra.Command {
 		output.Flags().StringVarP(&format, "format", "f", plugin.FormatDefault, fmt.Sprintf("Write outputs in this format. The only supported value is %q", plugin.FormatGitHubActions))
 		output.Flags().StringVarP(&target, "target", "t", "", "Targeted job's name for collecting and writings outputs")
 		cmd.AddCommand(output)
+	}
+
+	{
+		tools := &cobra.Command{
+			Use:    "tools",
+			Hidden: true,
+		}
+
+		var opts kargotools.CreatePullRequestOptions
+		createPullRequest := &cobra.Command{
+			Use: kargotools.CommandCreatePullRequest,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				cmd.SilenceUsage = true
+				url, err := kargotools.CreatePullRequest(
+					context.Background(),
+					opts,
+				)
+				if err != nil {
+					return err
+				}
+				fmt.Println(url)
+				return nil
+			},
+		}
+		createPullRequest.Flags().StringVar(&opts.TokenEnv, kargotools.FlagCreatePullRequestTokenEnv, "", "The env var from which the GitHub token to use for creating the pull request is obtained")
+		createPullRequest.Flags().StringVar(&opts.Base, kargotools.FlagCreatePullRequestBase, "", "The base branch to create the pull request against")
+		createPullRequest.Flags().StringVar(&opts.Head, kargotools.FlagCreatePullRequestHead, "", "The head branch to create the pull request from")
+		createPullRequest.Flags().StringVar(&opts.Title, kargotools.FlagCreatePullRequestTitle, "", "The title of the pull request")
+		createPullRequest.Flags().StringVar(&opts.Body, kargotools.FlagCreatePullRequestBody, "", "The body of the pull request")
+		createPullRequest.Flags().StringVar(&opts.Dir, kargotools.FlagCreatePullRequestDir, "", "The directory to run git commands in")
+		createPullRequest.Flags().BoolVar(&opts.DryRun, kargotools.FlagCreatePullRequestDryRun, false, "Whether to run the command in dry-run mode")
+
+		tools.AddCommand(createPullRequest)
+
+		cmd.AddCommand(tools)
 	}
 
 	return cmd

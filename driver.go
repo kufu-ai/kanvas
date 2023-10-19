@@ -275,7 +275,8 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			GetValue: func(key string) (string, error) {
 				return "$" + strings.ToUpper(strings.ReplaceAll(key, ".", "_")), nil
 			},
-			TailLogs: opts.LogsFollow,
+			TailLogs:     opts.LogsFollow,
+			ToolsCommand: []string{"kanvas", "tools"},
 		}
 
 		diff, err := g.ExecCmds(&c.Kubernetes.Config, kargo.Plan)

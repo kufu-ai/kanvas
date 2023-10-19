@@ -24,6 +24,15 @@ func ExecStdout(w io.Writer) ExecOption {
 	}
 }
 
+func ExecAddEnv(env map[string]string) ExecOption {
+	return func(c *exec.Cmd) {
+		c.Env = os.Environ()
+		for k, v := range env {
+			c.Env = append(c.Env, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
+}
+
 func (r *Runtime) Exec(dir string, cmd []string, opts ...ExecOption) error {
 	c := exec.CommandContext(context.TODO(), cmd[0], cmd[1:]...)
 	c.Dir = dir
