@@ -1,3 +1,4 @@
+GOLANGCI_LINT_VERSION=1.55.1
 TAG  ?= $(shell git describe --tags --abbrev=0 HEAD)
 DATE_FMT = +"%Y-%m-%dT%H:%M:%S%z"
 ifdef SOURCE_DATE_EPOCH
@@ -16,6 +17,14 @@ GO_BUILD_VERSION_LDFLAGS=\
 build:
 	go build -ldflags="$(GO_BUILD_VERSION_LDFLAGS)" -o dist/kanvas ./cmd/kanvas
 .PHONY: build
+
+lint:
+	docker run --rm -v $(shell pwd):/app -v ~/.cache/golangci-lint/v$(GOLANGCI_LINT_VERSION):/root/.cache -w /app golangci/golangci-lint:v$(GOLANGCI_LINT_VERSION) golangci-lint run -v
+.PHONY: lint
+
+test:
+	go test -v ./...
+.PHONY: test
 
 # find or download yq
 # download yq if necessary
