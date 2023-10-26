@@ -7,6 +7,10 @@ import (
 )
 
 func TestSummarizerr(t *testing.T) {
+	if ProjectRoot == "" {
+		t.Skip("Skipping test because KANVAS_WORKSPACE is not set")
+	}
+
 	s := Summarizer{
 		GitHubToken: GitHubToken,
 	}
