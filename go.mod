@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/hcl/v2 v2.16.2
 	github.com/helmfile/vals v0.25.0
-	github.com/mumoshu/kargo v0.3.2
+	github.com/mumoshu/kargo v0.5.0
 	github.com/projectdiscovery/yamldoc-go v1.0.4
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/spf13/cobra v1.6.1
