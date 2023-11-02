@@ -174,7 +174,7 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 				if err := r.Exec(dir, []string{"docker", "inspect", "--format={{.ID}}", image}, ExecStdout(&buf)); err != nil {
 					return fmt.Errorf("docker-inspect failed: %w", err)
 				}
-				o["id"] = buf.String()
+				o["id"] = strings.TrimSpace(buf.String())
 				return nil
 			},
 		}, nil
