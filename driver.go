@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"dario.cat/mergo"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/helmfile/vals"
 	"github.com/mumoshu/kargo"
@@ -313,12 +314,24 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			TempDir:      opts.TempDir,
 		}
 
-		diff, err := g.ExecCmds(&c.Kubernetes.Config, kargo.Plan)
+		var kc kargo.Config
+
+		if err := mergo.Merge(&kc, c.Kubernetes.Config, mergo.WithOverride); err != nil {
+			return nil, fmt.Errorf("unable to merge kubernetes component: %w", err)
+		}
+
+		if kc.Path != "" {
+			kc.Path = filepath.Join(absdir, kc.Path)
+		} else {
+			kc.Path = absdir
+		}
+
+		diff, err := g.ExecCmds(&kc, kargo.Plan)
 		if err != nil {
 			return nil, fmt.Errorf("generating plan commands: %w", err)
 		}
 
-		apply, err := g.ExecCmds(&c.Kubernetes.Config, kargo.Apply)
+		apply, err := g.ExecCmds(&kc, kargo.Apply)
 		if err != nil {
 			return nil, fmt.Errorf("generating apply commands: %w", err)
 		}
