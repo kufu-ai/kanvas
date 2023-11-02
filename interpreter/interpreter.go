@@ -3,6 +3,7 @@ package interpreter
 import (
 	"fmt"
 	"kanvas"
+	"os"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -147,7 +148,13 @@ func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
 
 		val, ok := job.Outputs[outName]
 		if !ok {
-			return "", fmt.Errorf(`output "%s.%s" does not exist. Ensure that %q outputs %q`, jobName, outName, jobName, outName)
+			var debug string
+			if os.Getenv("DEBUG") == "1" {
+				debug = fmt.Sprintf(". Available outputs: %v", job.Outputs)
+			} else {
+				debug = ". Set DEBUG=1 to see all the outputs"
+			}
+			return "", fmt.Errorf(`output "%s.%s" does not exist. Ensure that %q outputs %q%s`, jobName, outName, jobName, outName, debug)
 		}
 
 		return val, nil
