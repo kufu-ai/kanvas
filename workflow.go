@@ -132,7 +132,7 @@ func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, err
 		r[name] = c
 	}
 
-	for name, _ := range env.Uses {
+	for name := range env.Uses {
 		if _, ok := usedEnvs[name]; !ok {
 			return nil, fmt.Errorf("environment %q uses %q but it is not defined", wf.Options.Env, name)
 		}

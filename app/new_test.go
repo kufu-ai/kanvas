@@ -10,10 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type args struct {
-	a *App
-}
-
 func TestGenerateConfigData(t *testing.T) {
 	run(t, "simple")
 }

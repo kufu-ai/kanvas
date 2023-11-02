@@ -59,8 +59,6 @@ func (e *Plugin) exportActionsWorkflows(dir, kanvasContainerImage string) error 
 
 	outputs := map[string]map[string]string{}
 
-	const step = "out"
-
 	id := func(raw string) string {
 		if raw[0] == '/' {
 			raw = raw[1:]

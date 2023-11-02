@@ -372,25 +372,18 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 				return nil
 			},
 		}, nil
-	} else {
-		if len(c.Components) == 0 {
-			return nil, fmt.Errorf("invalid component: this component has no driver or components")
-		}
-		return &Driver{
-			Diff:   Seq(),
-			Apply:  Seq(),
-			Output: output,
-			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
-				return nil
-			},
-		}, nil
 	}
-
 	if len(c.Components) == 0 {
 		return nil, fmt.Errorf("invalid component: this component has no driver or components")
 	}
-
-	return nil, nil
+	return &Driver{
+		Diff:   Seq(),
+		Apply:  Seq(),
+		Output: output,
+		OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
+			return nil
+		},
+	}, nil
 }
 
 func Cmd(id, name string, opts ...cmd.Option) Step {

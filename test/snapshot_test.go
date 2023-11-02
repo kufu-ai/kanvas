@@ -2,7 +2,6 @@ package test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"kanvas"
 	"kanvas/app"
 	"os"
@@ -72,7 +71,7 @@ func run(t *testing.T, sub string, opts ...Option) {
 		)
 
 		if wantErr == "" {
-			files, err := ioutil.ReadDir(exportsDir)
+			files, err := os.ReadDir(exportsDir)
 			require.NoError(t, err)
 
 			for _, f := range files {
@@ -99,7 +98,7 @@ func run(t *testing.T, sub string, opts ...Option) {
 			require.NoError(t, gotErr)
 		}
 
-		destFiles, err := ioutil.ReadDir(destDir)
+		destFiles, err := os.ReadDir(destDir)
 		require.NoError(t, err)
 
 		for _, f := range destFiles {

@@ -2,7 +2,6 @@ package kanvas
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,7 +43,7 @@ func Decode(filename string, src []byte, ctx *hcl.EvalContext, target interface{
 // decodeHCLFile is a wrapper around Decode that first reads the given filename
 // from disk. See the Decode documentation for more information.
 func decodeHCLFile(filename string, ctx *hcl.EvalContext, target interface{}) error {
-	src, err := ioutil.ReadFile(filename)
+	src, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return hcl.Diagnostics{
