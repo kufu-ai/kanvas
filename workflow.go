@@ -45,7 +45,7 @@ func (wf *Workflow) Load(path, baseDir string, config Component) error {
 	}
 
 	if err := wf.load(path, baseDir, components); err != nil {
-		return err
+		return fmt.Errorf("loading %q %q: %w", path, baseDir, err)
 	}
 
 	plan, err := topologicalSort(wf.deps)
@@ -176,8 +176,10 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 			Driver: driver,
 		}
 
-		if err := wf.load(subPath, dir, c.Components); err != nil {
-			return err
+		if len(c.Components) > 0 {
+			if err := wf.load(subPath, dir, c.Components); err != nil {
+				return err
+			}
 		}
 
 		wf.deps[subPath] = needs
