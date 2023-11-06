@@ -311,6 +311,7 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			},
 			TailLogs:     opts.LogsFollow,
 			ToolsCommand: []string{"kanvas", "tools"},
+			ToolName:     "kanvas",
 			TempDir:      opts.TempDir,
 		}
 

@@ -103,6 +103,10 @@ func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, err
 	for name, c := range config.Components {
 		replacement, replaced := env.Uses[name]
 		if replaced {
+			if err := replacement.Validate(); err != nil {
+				return nil, fmt.Errorf("environment %q: override for component %q: %w", wf.Options.Env, name, err)
+			}
+
 			c = replacement
 
 			usedEnvs[name] = struct{}{}
@@ -136,7 +140,9 @@ func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, err
 		if _, ok := usedEnvs[name]; !ok {
 			return nil, fmt.Errorf("environment %q uses %q but it is not defined", wf.Options.Env, name)
 		}
+	}
 
+	for name := range env.Overrides {
 		if _, ok := overrodeEnvs[name]; !ok {
 			return nil, fmt.Errorf("environment %q overrides %q but it is not defined", wf.Options.Env, name)
 		}

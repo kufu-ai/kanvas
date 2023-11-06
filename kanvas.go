@@ -3,6 +3,7 @@
 package kanvas
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -30,6 +31,13 @@ type Component struct {
 	Environments map[string]Environment `yaml:"environments,omitempty"`
 	// Externals exposes external parameters and secrets as the component's outputs
 	Externals *Externals `yaml:"externals,omitempty"`
+}
+
+func (c *Component) Validate() error {
+	if c.Docker == nil && c.Terraform == nil && c.Kubernetes == nil {
+		return errors.New("component does not have any of docker, terraform, or kubernetes")
+	}
+	return nil
 }
 
 // Environment is a set of sub-components to replace the defaults
