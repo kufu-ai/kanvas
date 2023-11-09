@@ -8,6 +8,9 @@ components:
         docker:
             image: examplecom/myapp # Image is the name of the image to be built
             file: Dockerfile # File is the path to the Dockerfile
+            # Args is a map of build args
             args: {}
+            # ArgsFrom is a map of dynamic build args from the outputs of other components
             argsFrom: {}
+            # TagsFrom is a list of tags to be added to the image, derived from the outputs of other components
             tagsFrom: []

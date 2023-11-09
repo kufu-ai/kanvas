@@ -81,7 +81,36 @@ func kanvasOutputCommandForID(id string) func(format string) []string {
 func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 	output := kanvasOutputCommandForID(id)
 
-	if c.Docker != nil {
+	if c.AWS != nil {
+		return &Driver{
+			Diff:   Seq(),
+			Apply:  Seq(),
+			Output: output,
+			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
+				// Get a get-caller-identity result and compare
+				// returned Account with the one in the config
+				var buf bytes.Buffer
+				if err := r.Exec(dir, []string{"aws", "sts", "get-caller-identity"}, ExecStdout(&buf)); err != nil {
+					return fmt.Errorf("aws-sts-get-caller-identity failed: %w", err)
+				}
+
+				type CallerIdentity struct {
+					Account string `json:"Account"`
+				}
+
+				var ci CallerIdentity
+				if err := json.NewDecoder(&buf).Decode(&ci); err != nil {
+					return fmt.Errorf("unable to decode aws-sts-get-caller-identity output: %w", err)
+				}
+
+				if ci.Account != c.AWS.Account {
+					return fmt.Errorf("aws-sts-get-caller-identity returned Account %q, which is different from the one in the config %q", ci.Account, c.AWS.Account)
+				}
+
+				return nil
+			},
+		}, nil
+	} else if c.Docker != nil {
 		// TODO Append some unique-ish ID of the to-be-produced image
 		image := c.Docker.Image
 		dockerfile := c.Docker.File
@@ -398,7 +427,17 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 				return nil
 			},
 		}, nil
+	} else if c.Noop != nil {
+		return &Driver{
+			Diff:   Seq(),
+			Apply:  Seq(),
+			Output: output,
+			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
+				return nil
+			},
+		}, nil
 	}
+
 	if len(c.Components) == 0 {
 		return nil, fmt.Errorf("invalid component: this component has no driver or components")
 	}

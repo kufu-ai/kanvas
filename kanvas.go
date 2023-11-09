@@ -21,21 +21,34 @@ type Component struct {
 	Components map[string]Component `yaml:"components"`
 	// Needs is a list of components that this component depends on
 	Needs []string `yaml:"needs,omitempty"`
+
+	// AWS is an AWS-specific configuration
+	// This is currently used to ensure that you have the right AWS credentials
+	// that are required to access resources such as ECR and EKS.
+	AWS *AWS `yaml:"aws,omitempty"`
+
 	// Docker is a docker-specific configuration
 	Docker *Docker `yaml:"docker,omitempty"`
+
 	// Terraform is a terraform-specific configuration
 	Terraform *Terraform `yaml:"terraform,omitempty"`
+
 	// Kubernetes is a kubernetes-specific configuration
 	Kubernetes *Kubernetes `yaml:"kubernetes,omitempty"`
 	// Environments is a map of environments
 	Environments map[string]Environment `yaml:"environments,omitempty"`
 	// Externals exposes external parameters and secrets as the component's outputs
 	Externals *Externals `yaml:"externals,omitempty"`
+	// Noop is a noop configuration that does nothing
+	// This is mainly for template components that are only used as dependencies.
+	// You override or replaces this with a real component in the environment.
+	Noop *Noop `yaml:"noop,omitempty"`
 }
 
 func (c *Component) Validate() error {
-	if c.Docker == nil && c.Terraform == nil && c.Kubernetes == nil {
-		return errors.New("component does not have any of docker, terraform, or kubernetes")
+	if c.Docker == nil && c.Terraform == nil && c.Kubernetes == nil && c.AWS == nil && c.Externals == nil &&
+		c.Noop == nil {
+		return errors.New("component does not have any of docker, terraform, kubernetes, aws, externals, or noop fields")
 	}
 	return nil
 }
@@ -55,10 +68,13 @@ type Docker struct {
 	// Image is the name of the image to be built
 	Image string `yaml:"image"`
 	// File is the path to the Dockerfile
-	File     string            `yaml:"file"`
-	Args     map[string]string `yaml:"args"`
+	File string `yaml:"file"`
+	// Args is a map of build args
+	Args map[string]string `yaml:"args"`
+	// ArgsFrom is a map of dynamic build args from the outputs of other components
 	ArgsFrom map[string]string `yaml:"argsFrom"`
-	TagsFrom []string          `yaml:"tagsFrom"`
+	// TagsFrom is a list of tags to be added to the image, derived from the outputs of other components
+	TagsFrom []string `yaml:"tagsFrom"`
 }
 
 // Terraform is a terraform-specific configuration
