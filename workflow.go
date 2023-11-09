@@ -45,6 +45,10 @@ func (wf *Workflow) Load(path, baseDir string, config Component) error {
 		return err
 	}
 
+	if len(components) == 0 {
+		return fmt.Errorf("no components found")
+	}
+
 	if err := wf.load(path, baseDir, components); err != nil {
 		return fmt.Errorf("loading %q %q: %w", path, baseDir, err)
 	}
@@ -52,6 +56,10 @@ func (wf *Workflow) Load(path, baseDir string, config Component) error {
 	plan, err := topologicalSort(wf.deps)
 	if err != nil {
 		return err
+	}
+
+	if len(components) > 0 && len(plan) == 0 {
+		return fmt.Errorf("BUG: Unable to produce a valid plan even though there was no error")
 	}
 
 	// Remove top-level components from the plan.
