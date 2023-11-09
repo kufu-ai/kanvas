@@ -89,7 +89,6 @@ func (p AWSParam) ValsRefURL() string {
 
 	if p.Mode != "" {
 		base = fmt.Sprintf("%s%smode=%s", base, sep, p.Mode)
-		sep = "&"
 	}
 
 	if p.SubPath != "" {
