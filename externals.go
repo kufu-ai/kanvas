@@ -68,10 +68,28 @@ type AWSParam struct {
 }
 
 func (p AWSParam) ValsRefURL() string {
-	base := fmt.Sprintf("ref+awsssm://%s?region=%s&role_arn=%s&profile=%s", p.Path, p.Region, p.RoleARN, p.Profile)
+	base := fmt.Sprintf("ref+awsssm://%s", p.Path)
+
+	var sep = "?"
+
+	if p.Region != "" {
+		base = fmt.Sprintf("%s%sregion=%s", base, sep, p.Region)
+		sep = "&"
+	}
+
+	if p.Profile != "" {
+		base = fmt.Sprintf("%s%sprofile=%s", base, sep, p.Profile)
+		sep = "&"
+	}
+
+	if p.RoleARN != "" {
+		base = fmt.Sprintf("%s%srole_arn=%s", base, sep, p.RoleARN)
+		sep = "&"
+	}
 
 	if p.Mode != "" {
-		base = fmt.Sprintf("%s&mode=%s", base, p.Mode)
+		base = fmt.Sprintf("%s%smode=%s", base, sep, p.Mode)
+		sep = "&"
 	}
 
 	if p.SubPath != "" {

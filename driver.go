@@ -88,16 +88,28 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 		for name, value := range c.Docker.Args {
 			buildArgs = append(buildArgs, "--build-arg", fmt.Sprintf("%s=%s", name, value))
 		}
+		dynBuildArgs := &kargo.Args{}
+		for name, valueFrom := range c.Docker.ArgsFrom {
+			dynBuildArgs = dynBuildArgs.Append("--build-arg")
+			dynBuildArgs = dynBuildArgs.AppendValueFromOutputWithPrefix(
+				fmt.Sprintf("%s=", name),
+				valueFrom,
+			)
+		}
 		dockerBuild := cmd.New(
 			"docker-build",
 			"docker",
-			cmd.Args(concat(buildArgs, []interface{}{"-t", image, "-f", dockerfile, "."})...),
+			cmd.Args(concat(buildArgs, []interface{}{"-t", image, "-f", dockerfile})...),
+			cmd.Args(dynBuildArgs),
+			cmd.Args("."),
 			cmd.Dir(dir),
 		)
 		dockerBuildxLoad := cmd.New(
 			"docker-buildx-push",
 			"docker",
-			cmd.Args(concat(buildArgs, []interface{}{"--load", "--platform", "linux/amd64", "-t", image, "-f", dockerfile, "."})...),
+			cmd.Args(concat(buildArgs, []interface{}{"--load", "--platform", "linux/amd64", "-t", image, "-f", dockerfile})...),
+			cmd.Args(dynBuildArgs),
+			cmd.Args("."),
 		)
 		dockerPush := cmd.New(
 			"docker-push",
