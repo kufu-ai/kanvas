@@ -163,6 +163,7 @@ func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, err
 func (wf *Workflow) load(path, baseDir string, components map[string]Component) error {
 	const gitJob = "git"
 
+	// "git" job is a special job that is always added to the workflow
 	if _, ok := wf.WorkflowJobs[gitJob]; !ok {
 		dir := baseDir
 		driver := &Driver{
@@ -188,6 +189,8 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 			Dir:    dir,
 			Driver: driver,
 		}
+		// This is to ensure that the git job is managed by the topological sorter
+		wf.deps[gitJob] = []string{}
 	}
 
 	for name, c := range components {
