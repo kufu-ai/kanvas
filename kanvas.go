@@ -58,6 +58,7 @@ type Docker struct {
 	File     string            `yaml:"file"`
 	Args     map[string]string `yaml:"args"`
 	ArgsFrom map[string]string `yaml:"argsFrom"`
+	TagsFrom []string          `yaml:"tagsFrom"`
 }
 
 // Terraform is a terraform-specific configuration

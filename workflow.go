@@ -1,6 +1,7 @@
 package kanvas
 
 import (
+	"bytes"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -152,6 +153,35 @@ func (wf *Workflow) loadEnvironment(config Component) (map[string]Component, err
 }
 
 func (wf *Workflow) load(path, baseDir string, components map[string]Component) error {
+	const gitJob = "git"
+
+	if _, ok := wf.WorkflowJobs[gitJob]; !ok {
+		dir := baseDir
+		driver := &Driver{
+			Output: kanvasOutputCommandForID(gitJob),
+			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
+				var tag bytes.Buffer
+				if err := r.Exec(dir, []string{"git", "tag", "--points-at", "HEAD"}, ExecStdout(&tag)); err != nil {
+					return fmt.Errorf("unable to get current git tag: %w", err)
+				}
+				o["tag"] = strings.TrimSpace(tag.String())
+
+				var sha bytes.Buffer
+				if err := r.Exec(dir, []string{"git", "rev-parse", "HEAD"}, ExecStdout(&sha)); err != nil {
+					return fmt.Errorf("unable to get current git sha: %w", err)
+				}
+				o["sha"] = strings.TrimSpace(sha.String())
+
+				return nil
+			},
+		}
+
+		wf.WorkflowJobs[gitJob] = &WorkflowJob{
+			Dir:    dir,
+			Driver: driver,
+		}
+	}
+
 	for name, c := range components {
 		subPath := ID(path, name)
 

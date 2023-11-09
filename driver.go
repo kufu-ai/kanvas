@@ -68,14 +68,18 @@ func concat(a ...[]interface{}) []interface{} {
 	return r
 }
 
-func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
-	output := func(format string) []string {
+func kanvasOutputCommandForID(id string) func(format string) []string {
+	return func(format string) []string {
 		return append([]string{
 			"kanvas", "output", "-t", id, "-f",
 		},
 			format,
 		)
 	}
+}
+
+func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
+	output := kanvasOutputCommandForID(id)
 
 	if c.Docker != nil {
 		// TODO Append some unique-ish ID of the to-be-produced image
@@ -96,11 +100,19 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 				valueFrom,
 			)
 		}
+
+		dynTags := &kargo.Args{}
+		for _, tagFrom := range c.Docker.TagsFrom {
+			dynTags = dynTags.Append("-t")
+			dynTags = dynTags.AppendValueFromOutput(tagFrom)
+		}
+
 		dockerBuild := cmd.New(
 			"docker-build",
 			"docker",
 			cmd.Args(concat(buildArgs, []interface{}{"-t", image, "-f", dockerfile})...),
 			cmd.Args(dynBuildArgs),
+			cmd.Args(dynTags),
 			cmd.Args("."),
 			cmd.Dir(dir),
 		)
@@ -109,6 +121,7 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			"docker",
 			cmd.Args(concat(buildArgs, []interface{}{"--load", "--platform", "linux/amd64", "-t", image, "-f", dockerfile})...),
 			cmd.Args(dynBuildArgs),
+			cmd.Args(dynTags),
 			cmd.Args("."),
 		)
 		dockerPush := cmd.New(

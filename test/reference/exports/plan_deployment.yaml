@@ -7,6 +7,16 @@ on:
     - "**.md"
     - "**/docs/**"
 jobs:
+  git:
+    runs_on: ubuntu-latest
+    container:
+      image: kanvas:example
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - id: out
+      run: kanvas output -t git -f githubactions
   product1:
     runs_on: ubuntu-latest
     container:

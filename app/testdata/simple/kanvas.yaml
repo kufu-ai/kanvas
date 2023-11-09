@@ -10,3 +10,4 @@ components:
             file: Dockerfile # File is the path to the Dockerfile
             args: {}
             argsFrom: {}
+            tagsFrom: []
