@@ -18,7 +18,7 @@ func topologicalSort(dependencies map[string][]string) ([][]string, error) {
 	for node, deps := range dependencies {
 		for _, dep := range deps {
 			if _, ok := inDegree[dep]; !ok {
-				return nil, fmt.Errorf("the dependency %q of node %q does is not an existing node", dep, node)
+				return nil, fmt.Errorf("the dependency %q of node %q does not have a corresponding node %q", dep, node, dep)
 			}
 
 			inDegree[node]++
