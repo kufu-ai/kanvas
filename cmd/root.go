@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"kanvas"
 	"kanvas/app"
@@ -116,14 +117,18 @@ func Root() *cobra.Command {
 			Use: kargotools.CommandCreatePullRequest,
 			RunE: func(cmd *cobra.Command, args []string) error {
 				cmd.SilenceUsage = true
-				url, err := kargotools.CreatePullRequest(
+				r, err := kargotools.CreatePullRequest(
 					context.Background(),
 					opts,
 				)
 				if err != nil {
 					return err
 				}
-				fmt.Println(url)
+				j, err := json.MarshalIndent(r, "", "  ")
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(j))
 				return nil
 			},
 		}
