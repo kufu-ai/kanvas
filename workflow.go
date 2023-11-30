@@ -19,9 +19,11 @@ type Workflow struct {
 }
 
 type WorkflowJob struct {
-	Dir    string
-	Needs  []string
-	Driver *Driver
+	// Skipped is true if the job is skipped
+	Skipped bool
+	Dir     string
+	Needs   []string
+	Driver  *Driver
 }
 
 func NewWorkflow(config Component, opts Options) (*Workflow, error) {
@@ -221,6 +223,14 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 			Dir:    dir,
 			Needs:  needs,
 			Driver: driver,
+		}
+
+		// We can override the component's skipped flag via options
+		for _, s := range wf.Options.Skip {
+			if s == subPath {
+				wf.WorkflowJobs[subPath].Skipped = true
+				break
+			}
 		}
 
 		if len(c.Components) > 0 {

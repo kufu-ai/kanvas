@@ -54,6 +54,8 @@ type Options struct {
 	TempDir string
 	// UseAI enables AI to suggest a kanvas.yaml file content based on your environment.
 	UseAI bool
+	// Skip is a list of components to skip.
+	Skip []string
 }
 
 func (o Options) GetConfigFilePath() string {

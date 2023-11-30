@@ -48,6 +48,7 @@ func Root() *cobra.Command {
 			})
 		},
 	}
+	diff.Flags().StringSliceVar(&opts.Skip, "skip", nil, "Skip the specified component(s) when diffing changes")
 	cmd.AddCommand(diff)
 
 	apply := &cobra.Command{
@@ -61,6 +62,7 @@ func Root() *cobra.Command {
 		},
 	}
 	apply.Flags().BoolVar(&opts.LogsFollow, "logs-follow", false, "Follow log output from the components")
+	apply.Flags().StringSliceVar(&opts.Skip, "skip", nil, "Skip the specified component(s) when applying changes")
 	cmd.AddCommand(apply)
 
 	{
