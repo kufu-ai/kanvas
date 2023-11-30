@@ -118,7 +118,10 @@ func Root() *cobra.Command {
 			Hidden: true,
 		}
 
-		var opts kargotools.CreatePullRequestOptions
+		var opts = kargotools.CreatePullRequestOptions{
+			AssigneeIDs: []string{},
+		}
+
 		createPullRequest := &cobra.Command{
 			Use: kargotools.CommandCreatePullRequest,
 			RunE: func(cmd *cobra.Command, args []string) error {
@@ -144,6 +147,7 @@ func Root() *cobra.Command {
 		createPullRequest.Flags().StringVar(&opts.Title, kargotools.FlagCreatePullRequestTitle, "", "The title of the pull request")
 		createPullRequest.Flags().StringVar(&opts.Body, kargotools.FlagCreatePullRequestBody, "", "The body of the pull request")
 		createPullRequest.Flags().StringVar(&opts.Dir, kargotools.FlagCreatePullRequestDir, "", "The directory to run git commands in")
+		createPullRequest.Flags().StringSliceVar(&opts.AssigneeIDs, kargotools.FlagCreatePullRequestAssigneeIDs, []string{}, "The GitHub user IDs to assign the pull request to")
 		createPullRequest.Flags().BoolVar(&opts.DryRun, kargotools.FlagCreatePullRequestDryRun, false, "Whether to run the command in dry-run mode")
 
 		tools.AddCommand(createPullRequest)
