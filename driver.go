@@ -56,6 +56,10 @@ type Options struct {
 	UseAI bool
 	// Skip is a list of components to skip.
 	Skip []string
+	// SkippedJobsOutputs is a map of outputs for skipped jobs.
+	// The keys must be found in the Skip list.
+	// For example, if Skip is ["foo"], then SkippedJobsOutputs must have a key "foo".
+	SkippedJobsOutputs map[string]map[string]string
 }
 
 func (o Options) GetConfigFilePath() string {

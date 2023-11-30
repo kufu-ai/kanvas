@@ -60,7 +60,8 @@ func (p *Interpreter) run(name string, f func(job *WorkflowJob) error) error {
 		return fmt.Errorf("component %q is not defined", name)
 	}
 
-	if job.Skipped {
+	if job.Skipped != nil {
+		job.Outputs = job.Skipped
 		return nil
 	}
 

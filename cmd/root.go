@@ -16,7 +16,9 @@ import (
 
 func Root() *cobra.Command {
 	var (
-		opts kanvas.Options
+		opts = kanvas.Options{
+			SkippedJobsOutputs: map[string]map[string]string{},
+		}
 	)
 
 	cmd := &cobra.Command{
@@ -49,6 +51,7 @@ func Root() *cobra.Command {
 		},
 	}
 	diff.Flags().StringSliceVar(&opts.Skip, "skip", nil, "Skip the specified component(s) when diffing changes")
+	diff.Flags().Var(&JSONFlag{&opts.SkippedJobsOutputs}, "skipped-jobs-outputs", "The outputs from the skipped jobs. Needed for the jobs that depend on the skipped jobs")
 	cmd.AddCommand(diff)
 
 	apply := &cobra.Command{
@@ -63,6 +66,7 @@ func Root() *cobra.Command {
 	}
 	apply.Flags().BoolVar(&opts.LogsFollow, "logs-follow", false, "Follow log output from the components")
 	apply.Flags().StringSliceVar(&opts.Skip, "skip", nil, "Skip the specified component(s) when applying changes")
+	apply.Flags().Var(&JSONFlag{&opts.SkippedJobsOutputs}, "skipped-jobs-outputs", "The outputs from the skipped jobs. Needed for the jobs that depend on the skipped jobs")
 	cmd.AddCommand(apply)
 
 	{

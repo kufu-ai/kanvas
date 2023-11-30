@@ -19,8 +19,11 @@ type Workflow struct {
 }
 
 type WorkflowJob struct {
-	// Skipped is true if the job is skipped
-	Skipped bool
+	// Skipped becomes a non-nil map of outputs when the job is skipped
+	// This isn't a bool because we want to force the user to specify
+	// the outputs for the skipped job,
+	// otherwise the subsequent job will fail because it can't find the outputs.
+	Skipped map[string]string
 	Dir     string
 	Needs   []string
 	Driver  *Driver
@@ -225,10 +228,31 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 			Driver: driver,
 		}
 
+		//
 		// We can override the component's skipped flag via options
+		//
+
+		var outs map[string]map[string]string
+		if wf.Options.SkippedJobsOutputs != nil {
+			outs = wf.Options.SkippedJobsOutputs
+		} else {
+			outs = map[string]map[string]string{}
+		}
+
+		if len(outs) != len(wf.Options.Skip) {
+			return fmt.Errorf("the number of skipped jobs (%d) doesn't match the number of skipped jobs outputs (%d)", len(wf.Options.Skip), len(outs))
+		}
+
 		for _, s := range wf.Options.Skip {
 			if s == subPath {
-				wf.WorkflowJobs[subPath].Skipped = true
+				var m map[string]string
+				if o, ok := outs[subPath]; ok {
+					m = o
+				} else {
+					m = map[string]string{}
+				}
+
+				wf.WorkflowJobs[subPath].Skipped = m
 				break
 			}
 		}
