@@ -334,7 +334,7 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 					if err != nil {
 						return fmt.Errorf("failed to load configuration %s: %v", f, err)
 					}
-					fmt.Fprintf(os.Stdout, "%v\n", config)
+					fmt.Fprintf(os.Stderr, "Decoded HCL config: %v\n", config)
 					for _, out := range config.Outputs {
 						if _, ok := o[out.Name]; !ok {
 							o[out.Name] = "<computed>"

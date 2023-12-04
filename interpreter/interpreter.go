@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"encoding/json"
 	"fmt"
 	"kanvas"
 	"os"
@@ -190,7 +191,18 @@ func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
 
 func (p *Interpreter) Apply() error {
 	return p.Run(func(job *WorkflowJob) error {
-		return p.applyJob(job)
+		if err := p.applyJob(job); err != nil {
+			return err
+		}
+
+		res, err := json.MarshalIndent(job.Outputs, "", "  ")
+		if err != nil {
+			return fmt.Errorf("marshaling outputs: %w", err)
+		}
+
+		fmt.Fprintf(os.Stdout, "%s\n", res)
+
+		return nil
 	})
 }
 

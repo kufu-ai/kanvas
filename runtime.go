@@ -50,7 +50,7 @@ func (r *Runtime) Exec(dir string, cmd []string, opts ...ExecOption) error {
 		var (
 			stdout, stderr bytes.Buffer
 		)
-		c.Stdout = io.MultiWriter(&stdout, os.Stdout)
+		c.Stdout = io.MultiWriter(&stdout, os.Stderr)
 		c.Stderr = io.MultiWriter(&stderr, os.Stderr)
 		err := c.Run()
 		if err != nil {
