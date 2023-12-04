@@ -1,4 +1,4 @@
-module kanvas
+module github.com/davinci-std/kanvas
 
 go 1.20
 
