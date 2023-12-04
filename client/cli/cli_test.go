@@ -3,11 +3,12 @@ package cli
 import (
 	"context"
 	"fmt"
-	"kanvas/client"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/davinci-std/kanvas/client"
 
 	"github.com/stretchr/testify/require"
 )

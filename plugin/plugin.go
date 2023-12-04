@@ -2,7 +2,8 @@ package plugin
 
 import (
 	"fmt"
-	"kanvas"
+
+	"github.com/davinci-std/kanvas"
 )
 
 type Plugin struct {

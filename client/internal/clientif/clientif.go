@@ -2,7 +2,8 @@ package clientif
 
 import (
 	"context"
-	"kanvas/client"
+
+	"github.com/davinci-std/kanvas/client"
 )
 
 type Client interface {

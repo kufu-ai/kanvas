@@ -3,9 +3,10 @@ package interpreter
 import (
 	"encoding/json"
 	"fmt"
-	"kanvas"
 	"os"
 	"strings"
+
+	"github.com/davinci-std/kanvas"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/mumoshu/kargo"

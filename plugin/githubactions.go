@@ -2,11 +2,12 @@ package plugin
 
 import (
 	"fmt"
-	"kanvas"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/davinci-std/kanvas"
 
 	"github.com/goccy/go-yaml"
 	"github.com/mumoshu/kargo"

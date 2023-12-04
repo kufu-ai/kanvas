@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"kanvas/openaichat"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/davinci-std/kanvas/openaichat"
 )
 
 var APIKey = os.Getenv("OPENAI_API_KEY")

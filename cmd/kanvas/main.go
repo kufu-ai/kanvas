@@ -1,8 +1,9 @@
 package main
 
 import (
-	"kanvas/cmd"
 	"os"
+
+	"github.com/davinci-std/kanvas/cmd"
 )
 
 func main() {

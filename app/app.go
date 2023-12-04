@@ -2,11 +2,14 @@ package app
 
 import (
 	"fmt"
-	"kanvas"
-	"kanvas/interpreter"
-	"kanvas/plugin"
 	"os"
 	"time"
+
+	"github.com/davinci-std/kanvas/plugin"
+
+	"github.com/davinci-std/kanvas/interpreter"
+
+	"github.com/davinci-std/kanvas"
 )
 
 type App struct {

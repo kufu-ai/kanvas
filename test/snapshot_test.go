@@ -2,11 +2,13 @@ package test
 
 import (
 	"fmt"
-	"kanvas"
-	"kanvas/app"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/davinci-std/kanvas/app"
+
+	"github.com/davinci-std/kanvas"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -4,10 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"kanvas"
-	"kanvas/app"
-	"kanvas/build"
-	"kanvas/plugin"
+
+	"github.com/davinci-std/kanvas/plugin"
+
+	"github.com/davinci-std/kanvas/build"
+
+	"github.com/davinci-std/kanvas/app"
+
+	"github.com/davinci-std/kanvas"
 
 	kargotools "github.com/mumoshu/kargo/tools"
 

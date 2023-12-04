@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"kanvas/client"
-	"kanvas/client/internal/clientif"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/davinci-std/kanvas/client/internal/clientif"
+
+	"github.com/davinci-std/kanvas/client"
 )
 
 var _ clientif.Client = &Client{}

@@ -2,11 +2,14 @@ package app
 
 import (
 	"fmt"
-	"kanvas"
-	"kanvas/configai"
-	"kanvas/ghrepos"
 	"os"
 	"strings"
+
+	"github.com/davinci-std/kanvas/ghrepos"
+
+	"github.com/davinci-std/kanvas/configai"
+
+	"github.com/davinci-std/kanvas"
 
 	"github.com/projectdiscovery/yamldoc-go/encoder"
 )
