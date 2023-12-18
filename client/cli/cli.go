@@ -73,8 +73,10 @@ func (c *Client) Apply(ctx context.Context, config, env string, opts client.Appl
 
 	var r client.ApplyResult
 
-	if err := json.Unmarshal(out.Bytes(), &r); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal json: %w", err)
+	data := out.Bytes()
+
+	if err := json.Unmarshal(data, &r); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal json: %w\n%s", err, string(data))
 	}
 
 	return &r, nil

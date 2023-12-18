@@ -3,8 +3,6 @@ package client
 import (
 	"encoding/json"
 	"strings"
-
-	kargotools "github.com/mumoshu/kargo/tools"
 )
 
 const (
@@ -100,9 +98,56 @@ type ApplyResult struct {
 	Outputs map[string]Output `json:"-"`
 }
 
+// Any kanvas component and the provider used for the component
+// may define its own output.
 type Output struct {
-	// PullRequest is the pull request that was created by the apply command, if any.
-	PullRequest *kargotools.PullRequest `json:"pullRequest"`
+	// PullRequest is the pull request that was created by the apply command.
+	//
+	// You can expect any current and future kanvas provider
+	// that works with pull requests to produce the outputs for this field.
+	PullRequest *PullRequest `json:"-"`
+}
+
+type PullRequest struct {
+	// ID is the pull request ID.
+	//
+	// It is typed as "number" in the API response,
+	// but due to that kanvas output is typed as string,
+	// it is typed as string here.
+	ID string `json:"pullRequest.id"`
+	// NodeID is the pull request node ID.
+	//
+	// This is often used to identify the pull request when
+	// using the GitHub GraphQL API.
+	NodeID string `json:"pullRequest.nodeID"`
+	// Number is the pull request number.
+	//
+	// It is typed as "number" in the API response,
+	// but due to that kanvas output is typed as string,
+	// it is typed as string here.
+	Number  string `json:"pullRequest.number"`
+	Head    string `json:"pullRequest.head"`
+	HTMLURL string `json:"pullRequest.htmlURL"`
+}
+
+func (p PullRequest) IsEmpty() bool {
+	return p.ID == "" && p.Number == "" && p.Head == "" && p.HTMLURL == ""
+}
+
+// GetPullRequests returns the list of pull requests that were created by the apply command.
+//
+// By the nature of the apply command, it may or may not create a pull request.
+// It may even create multiple pull requests.
+//
+// It's up to the consumer of the kanvas output to decide what to do with the pull requests.
+func (r *ApplyResult) GetPullRequests() []*PullRequest {
+	var prs []*PullRequest
+	for _, o := range r.Outputs {
+		if o.PullRequest != nil {
+			prs = append(prs, o.PullRequest)
+		}
+	}
+	return prs
 }
 
 func (r *ApplyResult) UnmarshalJSON(b []byte) error {
@@ -115,9 +160,15 @@ func (r *ApplyResult) UnmarshalJSON(b []byte) error {
 
 	for k, v := range m {
 		var o Output
-		if err := json.Unmarshal(v, &o); err != nil {
+
+		var pr PullRequest
+		if err := json.Unmarshal(v, &pr); err != nil {
 			return err
 		}
+		if !pr.IsEmpty() {
+			o.PullRequest = &pr
+		}
+
 		r.Outputs[k] = o
 	}
 

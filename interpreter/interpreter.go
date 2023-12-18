@@ -191,20 +191,48 @@ func (p *Interpreter) runCmd(j *WorkflowJob, cmd kargo.Cmd) error {
 }
 
 func (p *Interpreter) Apply() error {
-	return p.Run(func(job *WorkflowJob) error {
+	if err := p.Run(func(job *WorkflowJob) error {
 		if err := p.applyJob(job); err != nil {
 			return err
 		}
 
-		res, err := json.MarshalIndent(job.Outputs, "", "  ")
-		if err != nil {
-			return fmt.Errorf("marshaling outputs: %w", err)
-		}
-
-		fmt.Fprintf(os.Stdout, "%s\n", res)
-
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	// An example of the whole kanvas standard output would look like:
+	// {
+	//   "app": {
+	//     "pullRequest.head": "kanvas-20231216082910",
+	//     "pullRequest.htmlURL": "https://github.com/myorg/mygitopsconfig/pull/123",
+	//     "pullRequest.id": "1234567890",
+	//     "pullRequest.number": "123"
+	//   },
+	//   "git": {
+	//     "sha": "123d3c1a9a669f45c17a25cf5222c0cc0b630738",
+	//     "tag": ""
+	//   },
+	//   "image": {
+	//     "id": "sha256:12356935acbd6a67d3fed10512d89450330047f3ae6fb3a62e9bf4f229529387",
+	//     "kanvas.buildx": "true"
+	//   }
+	// }
+
+	out := map[string]map[string]string{}
+
+	for _, job := range p.WorkflowJobs {
+		out[job.ID] = job.Outputs
+	}
+
+	res, err := json.MarshalIndent(out, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshaling outputs: %w", err)
+	}
+
+	fmt.Fprintf(os.Stdout, "%s\n", res)
+
+	return nil
 }
 
 func (p *Interpreter) Diff() error {

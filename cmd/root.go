@@ -152,6 +152,7 @@ func Root() *cobra.Command {
 		createPullRequest.Flags().StringVar(&opts.Body, kargotools.FlagCreatePullRequestBody, "", "The body of the pull request")
 		createPullRequest.Flags().StringVar(&opts.Dir, kargotools.FlagCreatePullRequestDir, "", "The directory to run git commands in")
 		createPullRequest.Flags().StringSliceVar(&opts.AssigneeIDs, kargotools.FlagCreatePullRequestAssigneeIDs, []string{}, "The GitHub user IDs to assign the pull request to")
+		createPullRequest.Flags().StringVar(&opts.OutputFile, kargotools.FlagCreatePullRequestOutputFile, "", "The path to the json file to write the pull request info to")
 		createPullRequest.Flags().BoolVar(&opts.DryRun, kargotools.FlagCreatePullRequestDryRun, false, "Whether to run the command in dry-run mode")
 
 		tools.AddCommand(createPullRequest)

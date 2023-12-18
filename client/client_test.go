@@ -3,7 +3,6 @@ package client
 import (
 	"testing"
 
-	"github.com/mumoshu/kargo/tools"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,9 +19,7 @@ func TestApplyResultUnmarshal(t *testing.T) {
 		var got ApplyResult
 		jsonBytes := []byte(`{
 			"foo": {
-				"pullRequest": {
-					"number": 1
-				}
+				"pullRequest.number": "1"
 			}
 		}`)
 		if err := got.UnmarshalJSON(jsonBytes); err != nil {
@@ -31,8 +28,8 @@ func TestApplyResultUnmarshal(t *testing.T) {
 		want := ApplyResult{
 			Outputs: map[string]Output{
 				"foo": {
-					PullRequest: &tools.PullRequest{
-						Number: 1,
+					PullRequest: &PullRequest{
+						Number: "1",
 					},
 				},
 			},

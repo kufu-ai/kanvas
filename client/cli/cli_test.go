@@ -71,6 +71,8 @@ func main() {
 	if !reflect.DeepEqual(want, got) {
 		fmt.Fprintf(os.Stderr, "want: %v\n", want)
 		fmt.Fprintf(os.Stderr, "got : %v\n", got)
+		fmt.Fprintf(os.Stderr, "args : %v\n", os.Args)
+		fmt.Fprintf(os.Stderr, "env : %v\n", os.Environ())
 		os.Exit(1)
 	}
 	fmt.Println("{}")

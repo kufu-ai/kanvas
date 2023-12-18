@@ -14,6 +14,7 @@ import (
 	"github.com/helmfile/vals"
 	"github.com/mumoshu/kargo"
 	"github.com/mumoshu/kargo/cmd"
+	"github.com/mumoshu/kargo/tools"
 )
 
 type Step Task
@@ -365,14 +366,17 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 
 		c.Kubernetes.Name = name
 
+		prOutFile := filepath.Join(opts.TempDir, "kargo.pullrequest.out.json")
+
 		g := &kargo.Generator{
 			GetValue: func(key string) (string, error) {
 				return "$" + strings.ToUpper(strings.ReplaceAll(key, ".", "_")), nil
 			},
-			TailLogs:     opts.LogsFollow,
-			ToolsCommand: []string{"kanvas", "tools"},
-			ToolName:     "kanvas",
-			TempDir:      opts.TempDir,
+			TailLogs:              opts.LogsFollow,
+			ToolsCommand:          []string{"kanvas", "tools"},
+			ToolName:              "kanvas",
+			TempDir:               opts.TempDir,
+			PullRequestOutputFile: prOutFile,
 		}
 
 		var kc kargo.Config
@@ -402,6 +406,32 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			Apply:  cmdsToSeq(apply),
 			Output: output,
 			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
+				if op == Diff {
+					return nil
+				}
+
+				if prOutFile == "" {
+					return nil
+				}
+
+				jsonData, err := os.ReadFile(prOutFile)
+				if err != nil {
+					// TODO: This should be a warning
+					return nil
+				}
+
+				var pr tools.PullRequest
+
+				if err := json.Unmarshal(jsonData, &pr); err != nil {
+					return fmt.Errorf("unmarshaling pull request output file: %w", err)
+				}
+
+				o["pullRequest.id"] = fmt.Sprintf("%d", pr.ID)
+				o["pullRequest.nodeID"] = pr.NodeID
+				o["pullRequest.number"] = fmt.Sprintf("%d", pr.Number)
+				o["pullRequest.head"] = pr.Head
+				o["pullRequest.htmlURL"] = pr.HTMLURL
+
 				return nil
 			},
 		}, nil
