@@ -447,9 +447,9 @@ components:
 
   ```
   Note that the -target option is not suitable for routine use, and is
-│ provided only for exceptional situations such as recovering from errors or
-│ mistakes, or when Terraform specifically suggests to use it as part of an
-│ error message.
+  provided only for exceptional situations such as recovering from errors or
+  mistakes, or when Terraform specifically suggests to use it as part of an
+  error message.
   ```
 
   `kanvas`, on the other hand, is build from ground-up to natively connect
