@@ -70,7 +70,7 @@ func TestWorkflowLoad(t *testing.T) {
 
 func TestWorkflowLoad_SkipImage(t *testing.T) {
 	plan := [][]string{
-		{"git", "image", "prereq"},
+		{"image", "prereq"},
 		{"deploy"},
 	}
 
@@ -98,19 +98,19 @@ func TestWorkflowLoad_SkipImage(t *testing.T) {
 
 func TestWorkflowLoad_SkipTransitive(t *testing.T) {
 	plan := [][]string{
-		{"git", "image", "prereq"},
+		{"image", "prereq"},
 		{"deploy"},
 	}
 
 	opts := func(o *kanvas.Options) {
-		o.Skip = []string{"image", "git", "prereq"}
+		o.Skip = []string{"image", "prereq"}
 		o.SkippedJobsOutputs = map[string]map[string]string{
 			"image": {
 				"tag": "foobar",
 			},
-			"git": {
-				"sha": "123d3c1a9a669f45c17a25cf5222c0cc0b630738",
-			},
+			// "git": {
+			// 	"sha": "123d3c1a9a669f45c17a25cf5222c0cc0b630738",
+			// },
 			"prereq": {},
 		}
 	}
@@ -130,4 +130,30 @@ func TestWorkflowLoad_SkipTransitive(t *testing.T) {
 	i := interpreter.New(w, kanvas.NewRuntime())
 
 	require.NoError(t, i.Diff())
+}
+
+func TestWorkflowLoad_TryingToSkipUnneededGit(t *testing.T) {
+	opts := func(o *kanvas.Options) {
+		o.Skip = []string{"image", "prereq"}
+		o.SkippedJobsOutputs = map[string]map[string]string{
+			"image": {
+				"tag": "foobar",
+			},
+			"git": {
+				"sha": "123d3c1a9a669f45c17a25cf5222c0cc0b630738",
+			},
+			"prereq": {},
+		}
+	}
+
+	c := newComponent()
+	o := kanvas.Options{
+		TempDir: t.TempDir(),
+	}
+
+	opts(&o)
+
+	_, err := kanvas.NewWorkflow(c, o)
+	require.Error(t, err)
+	require.Equal(t, `loading "" "testdata/workflow": the number of skipped jobs (2) doesn't match the number of skipped jobs outputs (3)`, err.Error())
 }

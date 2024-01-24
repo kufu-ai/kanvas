@@ -199,17 +199,51 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 	for name, c := range components {
 		subPath := ID(path, name)
 
-		var needs []string
-		for _, n := range c.Needs {
-			needs = append(needs, ID(path, n))
+		j := &WorkflowJob{}
 
-			if n == gitJob {
-				// This is to ensure that the git job is managed by the topological sorter.
-				//
-				// And we do this only when any of the components needs the git job.
-				// Otherwise, we end up initializing (and possibly failing) the git component
-				// even when no other component needs it.
-				wf.deps[gitJob] = []string{}
+		//
+		// We can override the component's skipped flag via options
+		//
+
+		var outs map[string]map[string]string
+		if wf.Options.SkippedJobsOutputs != nil {
+			outs = wf.Options.SkippedJobsOutputs
+		} else {
+			outs = map[string]map[string]string{}
+		}
+		if len(outs) != len(wf.Options.Skip) {
+			return fmt.Errorf("the number of skipped jobs (%d) doesn't match the number of skipped jobs outputs (%d)", len(wf.Options.Skip), len(outs))
+		}
+
+		var skipped bool
+		for _, s := range wf.Options.Skip {
+			if s == subPath {
+				var m map[string]string
+				if o, ok := outs[subPath]; ok {
+					m = o
+				} else {
+					m = map[string]string{}
+				}
+
+				j.Skipped = m
+				skipped = true
+				break
+			}
+		}
+
+		var needs []string
+		if !skipped {
+			for _, n := range c.Needs {
+				needs = append(needs, ID(path, n))
+
+				if n == gitJob {
+					// This is to ensure that the git job is managed by the topological sorter.
+					//
+					// And we do this only when any of the components needs the git job.
+					// Otherwise, we end up initializing (and possibly failing) the git component
+					// even when no other component needs it.
+					wf.deps[gitJob] = []string{}
+				}
 			}
 		}
 
@@ -229,43 +263,11 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 			return fmt.Errorf("component %q: %w", name, err)
 		}
 
-		wf.WorkflowJobs[subPath] = &WorkflowJob{
-			Dir:    dir,
-			Needs:  needs,
-			Driver: driver,
-		}
+		j.Dir = dir
+		j.Needs = needs
+		j.Driver = driver
 
-		//
-		// We can override the component's skipped flag via options
-		//
-
-		var outs map[string]map[string]string
-		if wf.Options.SkippedJobsOutputs != nil {
-			outs = wf.Options.SkippedJobsOutputs
-		} else {
-			outs = map[string]map[string]string{}
-		}
-
-		if len(outs) != len(wf.Options.Skip) {
-			return fmt.Errorf("the number of skipped jobs (%d) doesn't match the number of skipped jobs outputs (%d)", len(wf.Options.Skip), len(outs))
-		}
-
-		var skipped bool
-
-		for _, s := range wf.Options.Skip {
-			if s == subPath {
-				var m map[string]string
-				if o, ok := outs[subPath]; ok {
-					m = o
-				} else {
-					m = map[string]string{}
-				}
-
-				wf.WorkflowJobs[subPath].Skipped = m
-				skipped = true
-				break
-			}
-		}
+		wf.WorkflowJobs[subPath] = j
 
 		if len(c.Components) > 0 {
 			if err := wf.load(subPath, dir, c.Components); err != nil {
@@ -273,11 +275,7 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 			}
 		}
 
-		if skipped {
-			wf.deps[subPath] = []string{}
-		} else {
-			wf.deps[subPath] = needs
-		}
+		wf.deps[subPath] = needs
 	}
 
 	return nil
