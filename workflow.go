@@ -194,8 +194,6 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 			Dir:    dir,
 			Driver: driver,
 		}
-		// This is to ensure that the git job is managed by the topological sorter
-		wf.deps[gitJob] = []string{}
 	}
 
 	for name, c := range components {
@@ -204,6 +202,15 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 		var needs []string
 		for _, n := range c.Needs {
 			needs = append(needs, ID(path, n))
+
+			if n == gitJob {
+				// This is to ensure that the git job is managed by the topological sorter.
+				//
+				// And we do this only when any of the components needs the git job.
+				// Otherwise, we end up initializing (and possibly failing) the git component
+				// even when no other component needs it.
+				wf.deps[gitJob] = []string{}
+			}
 		}
 
 		dir := c.Dir
@@ -219,7 +226,7 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 
 		driver, err := newDriver(subPath, dir, c, wf.Options)
 		if err != nil {
-			return err
+			return fmt.Errorf("component %q: %w", name, err)
 		}
 
 		wf.WorkflowJobs[subPath] = &WorkflowJob{

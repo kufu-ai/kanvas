@@ -475,7 +475,7 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 	}
 
 	if len(c.Components) == 0 {
-		return nil, fmt.Errorf("invalid component: this component has no driver or components")
+		return nil, fmt.Errorf("missing driver and components")
 	}
 	return &Driver{
 		Diff:   Seq(),
