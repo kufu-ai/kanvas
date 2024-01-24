@@ -243,6 +243,8 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 			return fmt.Errorf("the number of skipped jobs (%d) doesn't match the number of skipped jobs outputs (%d)", len(wf.Options.Skip), len(outs))
 		}
 
+		var skipped bool
+
 		for _, s := range wf.Options.Skip {
 			if s == subPath {
 				var m map[string]string
@@ -253,6 +255,7 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 				}
 
 				wf.WorkflowJobs[subPath].Skipped = m
+				skipped = true
 				break
 			}
 		}
@@ -263,7 +266,11 @@ func (wf *Workflow) load(path, baseDir string, components map[string]Component) 
 			}
 		}
 
-		wf.deps[subPath] = needs
+		if skipped {
+			wf.deps[subPath] = []string{}
+		} else {
+			wf.deps[subPath] = needs
+		}
 	}
 
 	return nil
