@@ -14,7 +14,8 @@ import (
 )
 
 func TestCLIApply(t *testing.T) {
-	cmd := setupTestCommand(t, "--config", "kanvas.yaml", "--env", "dev", "apply")
+	cmd, teardown := setupTestCommand(t, "--config", "kanvas.yaml", "--env", "dev", "apply")
+	defer teardown()
 
 	cli := New()
 	cli.Command = cmd
@@ -26,7 +27,8 @@ func TestCLIApply(t *testing.T) {
 }
 
 func TestCLIDiff(t *testing.T) {
-	cmd := setupTestCommand(t, "--config", "kanvas.yaml", "--env", "dev", "diff")
+	cmd, teardown := setupTestCommand(t, "--config", "kanvas.yaml", "--env", "dev", "diff")
+	defer teardown()
 
 	cli := New()
 	cli.Command = cmd
@@ -47,7 +49,7 @@ const (
 // setupTestCommand sets up the test command, that
 // fails with exit code 1 when the arguments passed to the command
 // are not the same as the expected ones.
-func setupTestCommand(t *testing.T, expectKanvasArgs ...string) []string {
+func setupTestCommand(t *testing.T, expectKanvasArgs ...string) ([]string, func()) {
 	// This is a hack to run the main function in this file,
 	// from the command that is run by the test.
 	//
@@ -61,7 +63,10 @@ func setupTestCommand(t *testing.T, expectKanvasArgs ...string) []string {
 	os.Setenv(env, envValue)
 	os.Setenv(argsEnv, strings.Join(expectKanvasArgs, argsSep))
 
-	return []string{os.Args[0], "-test.run=" + t.Name(), "--"}
+	return []string{os.Args[0], "-test.run=" + t.Name(), "--"}, func() {
+		os.Unsetenv(env)
+		os.Unsetenv(argsEnv)
+	}
 }
 
 // This is a mock of the kanvas command.
