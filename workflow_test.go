@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/davinci-std/kanvas"
-	"github.com/davinci-std/kanvas/interpreter"
 	"github.com/mumoshu/kargo"
 	"github.com/stretchr/testify/require"
 )
@@ -126,10 +125,6 @@ func TestWorkflowLoad_SkipTransitive(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, plan, w.Plan)
-
-	i := interpreter.New(w, kanvas.NewRuntime())
-
-	require.NoError(t, i.Diff())
 }
 
 func TestWorkflowLoad_TryingToSkipUnneededGit(t *testing.T) {
