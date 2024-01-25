@@ -1,0 +1,13 @@
+components:
+  prereq:
+    aws:
+      account: 123456
+  image:
+    needs:
+    - git
+    - prereq
+    docker:
+      image: myaccount.dkr.ecr.ap-northeast-1.amazonaws.com/myapp
+      file: Dockerfile
+      tagsFrom:
+      - git.sha

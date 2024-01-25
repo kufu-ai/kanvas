@@ -1,0 +1,11 @@
+# This is a Pod manifest yaml that deploys the image
+# "myaccount.dkr.ecr.ap-northeast-1.amazonaws.com/myapp"
+# to a Kubernetes cluster.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp
+spec:
+  containers:
+  - name: myapp
+    image: myaccount.dkr.ecr.ap-northeast-1.amazonaws.com/myapp
