@@ -7,6 +7,8 @@ import (
 
 const (
 	EnvVarPullRequestAssigneeIDs = "KANVAS_PULLREQUEST_ASSIGNEE_IDS"
+	EnvVarGitUserName            = "KANVAS_GIT_USER_NAME"
+	EnvVarGitUserEmail           = "KANVAS_GIT_USER_EMAIL"
 	EnvVarPullRequestHead        = "KANVAS_PULLREQUEST_HEAD"
 )
 
@@ -17,6 +19,10 @@ type ApplyOptions struct {
 	// PullRequestAssigneeIDs is the list of GitHub user IDs to assign to the pull request that will be created by the apply command.
 	// Each ID can be either an integer or a string.
 	PullRequestAssigneeIDs []string `json:"pullRequestAssigneeIDs"`
+	// GitUserName is the name of the user to use for the git commit.
+	GitUserName string `json:"gitUserName"`
+	// GitUserEmail is the email of the user to use for the git commit.
+	GitUserEmail string `json:"gitUserEmail"`
 	// PullRequestHead is the branch to create the pull request from.
 	PullRequestHead string `json:"pullRequestHead"`
 	// EnvVars is the list of environment variables to set for the apply command.
@@ -45,6 +51,14 @@ func (o *ApplyOptions) GetEnvVars() map[string]string {
 		m[EnvVarPullRequestAssigneeIDs] = strings.Join(o.PullRequestAssigneeIDs, ",")
 	}
 
+	if o.GitUserName != "" {
+		m[EnvVarGitUserName] = o.GitUserName
+	}
+
+	if o.GitUserEmail != "" {
+		m[EnvVarGitUserEmail] = o.GitUserEmail
+	}
+
 	if o.PullRequestHead != "" {
 		m[EnvVarPullRequestHead] = o.PullRequestHead
 	}
@@ -59,6 +73,10 @@ type DiffOptions struct {
 	// PullRequestAssigneeIDs is the list of GitHub user IDs to assign to the pull request that will be created by the apply command.
 	// Each ID can be either an integer or a string.
 	PullRequestAssigneeIDs []string `json:"pullRequestAssigneeIDs"`
+	// GitUserName is the name of the user to use for the git commit.
+	GitUserName string `json:"gitUserName"`
+	// GitUserEmail is the email of the user to use for the git commit.
+	GitUserEmail string `json:"gitUserEmail"`
 	// PullRequestHead is the branch to create the pull request from.
 	PullRequestHead string `json:"pullRequestHead"`
 	// EnvVars is the list of environment variables to set for the apply command.
@@ -85,6 +103,14 @@ func (o *DiffOptions) GetEnvVars() map[string]string {
 
 	if o.PullRequestAssigneeIDs != nil {
 		m[EnvVarPullRequestAssigneeIDs] = strings.Join(o.PullRequestAssigneeIDs, ",")
+	}
+
+	if o.GitUserName != "" {
+		m[EnvVarGitUserName] = o.GitUserName
+	}
+
+	if o.GitUserEmail != "" {
+		m[EnvVarGitUserEmail] = o.GitUserEmail
 	}
 
 	if o.PullRequestHead != "" {
