@@ -100,7 +100,7 @@ func Root() *cobra.Command {
 			renderDir string
 		)
 		render := &cobra.Command{
-			Use:   "export",
+			Use:   "render",
 			Short: "Render the kanvas.template.jsonnet to kanvas.yaml",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				return run(cmd, opts, func(a *app.App) error {
