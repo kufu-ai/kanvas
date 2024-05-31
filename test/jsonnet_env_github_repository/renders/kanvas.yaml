@@ -1,0 +1,6 @@
+components:
+  product1:
+    appimage:
+      dir: /containerimages/app
+      docker:
+        image: myregistry/myowner-myrepo

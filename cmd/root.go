@@ -97,6 +97,24 @@ func Root() *cobra.Command {
 
 	{
 		var (
+			renderDir string
+		)
+		render := &cobra.Command{
+			Use:   "export",
+			Short: "Render the kanvas.template.jsonnet to kanvas.yaml",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return run(cmd, opts, func(a *app.App) error {
+					cmd.SilenceUsage = true
+					return a.Render(renderDir)
+				})
+			},
+		}
+		render.Flags().StringVarP(&renderDir, "dir", "d", "", "Writes the rendered kanvas.yaml to this directory")
+		cmd.AddCommand(render)
+	}
+
+	{
+		var (
 			target string
 			op     string
 			format string

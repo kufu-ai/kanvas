@@ -3,12 +3,14 @@ package kanvas
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 const (
-	defaultConfigFileBase    = "kanvas"
-	DefaultConfigFileYAML    = defaultConfigFileBase + ".yaml"
-	DefaultConfigFileJsonnet = defaultConfigFileBase + ".jsonnet"
+	defaultConfigFileBase            = "kanvas"
+	DefaultConfigFileYAML            = defaultConfigFileBase + ".yaml"
+	DefaultConfigFileJsonnet         = defaultConfigFileBase + ".jsonnet"
+	DefaultConfigFileTemplateJsonnet = defaultConfigFileBase + ".template.jsonnet"
 )
 
 // DiscoverConfigFile returns the path to the config file to use.
@@ -22,27 +24,27 @@ func DiscoverConfigFile(opts Options) (string, error) {
 		return opts.ConfigFile, nil
 	}
 
-	var yamlFound, jsonnetFound bool
+	var (
+		found []string
+	)
 
 	if _, err := os.Stat(DefaultConfigFileYAML); err == nil {
-		yamlFound = true
+		found = append(found, DefaultConfigFileYAML)
 	}
 
 	if _, err := os.Stat(DefaultConfigFileJsonnet); err == nil {
-		jsonnetFound = true
+		found = append(found, DefaultConfigFileJsonnet)
 	}
 
-	if yamlFound && jsonnetFound {
-		return "", fmt.Errorf("both %q and %q exist. Please specify the config file with --config-file", DefaultConfigFileYAML, DefaultConfigFileJsonnet)
+	if _, err := os.Stat(DefaultConfigFileTemplateJsonnet); err == nil {
+		found = append(found, DefaultConfigFileTemplateJsonnet)
 	}
 
-	if yamlFound {
-		return DefaultConfigFileYAML, nil
+	if len(found) > 1 {
+		return "", fmt.Errorf("%d config files %s found. Please specify the config file with --config-file", len(found), strings.Join(found, ", "))
+	} else if len(found) == 0 {
+		return "", fmt.Errorf("unable to find config file")
 	}
 
-	if jsonnetFound {
-		return DefaultConfigFileJsonnet, nil
-	}
-
-	return "", fmt.Errorf("unable to find config file")
+	return found[0], nil
 }

@@ -3,7 +3,11 @@ package app
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
+
+	"github.com/goccy/go-yaml"
 
 	"github.com/davinci-std/kanvas/plugin"
 
@@ -13,9 +17,15 @@ import (
 )
 
 type App struct {
-	Config  kanvas.Component
+	Config  Config
 	Runtime *kanvas.Runtime
 	Options kanvas.Options
+}
+
+type Config struct {
+	Raw  []byte
+	Path string
+	kanvas.Component
 }
 
 func New(opts kanvas.Options) (*App, error) {
@@ -28,7 +38,17 @@ func New(opts kanvas.Options) (*App, error) {
 	}
 	opts.TempDir = tempDir
 
-	c, err := kanvas.LoadConfig(opts)
+	path, err := kanvas.DiscoverConfigFile(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := kanvas.RenderOrReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := kanvas.LoadConfig(path, file)
 	if err != nil {
 		return nil, err
 	}
@@ -36,15 +56,18 @@ func New(opts kanvas.Options) (*App, error) {
 	r := kanvas.NewRuntime()
 
 	return &App{
-		Config:  *c,
+		Config: Config{
+			Raw:       file,
+			Path:      path,
+			Component: *c,
+		},
 		Runtime: r,
 		Options: opts,
 	}, nil
-
 }
 
 func (a *App) newWorkflow() (*kanvas.Workflow, error) {
-	return kanvas.NewWorkflow(a.Config, a.Options)
+	return kanvas.NewWorkflow(a.Config.Component, a.Options)
 }
 
 // Diff shows the diff between the desired state and the current state
@@ -80,6 +103,29 @@ func (a *App) Export(format, dir, kanvasContainerImage string) error {
 	e := plugin.New(wf, a.Runtime)
 
 	return e.Export(format, dir, kanvasContainerImage)
+}
+
+func (a *App) Render(dir string) error {
+	path := filepath.Base(a.Config.Path)
+
+	const ext = ".template.jsonnet"
+	if strings.HasSuffix(path, ext) {
+		path = path[:len(path)-len(ext)]
+	} else {
+		path = path[:len(path)-len(filepath.Ext(path))]
+	}
+	path = filepath.Join(dir, path+".yaml")
+
+	yamlData, err := yaml.JSONToYAML(a.Config.Raw)
+	if err != nil {
+		return fmt.Errorf("unable to convert json to yaml: %w", err)
+	}
+
+	if err := os.WriteFile(path, yamlData, 0644); err != nil {
+		return fmt.Errorf("unable to write to %s: %w", path, err)
+	}
+
+	return nil
 }
 
 func (a *App) Output(format, op, target string) error {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 	"github.com/google/go-jsonnet"
@@ -109,31 +110,10 @@ type Kubernetes struct {
 // The jsonnet file can be used to generate the yaml file.
 // If the file is a jsonnet file, it is compiled to json first.
 // The compiled json is then unmarshalled into the Component struct.
-func LoadConfig(opts Options) (*Component, error) {
+func LoadConfig(path string, file []byte) (*Component, error) {
 	var (
 		config Component
 	)
-
-	path, err := DiscoverConfigFile(opts)
-	if err != nil {
-		return nil, err
-	}
-
-	file, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	if filepath.Ext(path) == ".jsonnet" {
-		vm := jsonnet.MakeVM()
-
-		json, err := vm.EvaluateAnonymousSnippet(path, string(file))
-		if err != nil {
-			return nil, err
-		}
-
-		file = []byte(json)
-	}
 
 	if err := yaml.Unmarshal(file, &config); err != nil {
 		return nil, err
@@ -144,4 +124,36 @@ func LoadConfig(opts Options) (*Component, error) {
 	}
 
 	return &config, nil
+}
+
+func RenderOrReadFile(path string) ([]byte, error) {
+	file, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if filepath.Ext(path) == ".jsonnet" {
+		vm := jsonnet.MakeVM()
+
+		if strings.Contains(filepath.Base(path), ".template.") {
+			vm.ExtVar("template", "true")
+
+			if v := os.Getenv("GITHUB_REPOSITORY"); v != "" {
+				splits := strings.Split(v, "/")
+				vm.ExtVar("github_repo_owner", splits[0])
+				vm.ExtVar("github_repo_name", splits[1])
+			} else {
+				return nil, errors.New(".template.jsonnet requires GITHUB_REPOSITORY to be set to OWNER/REPO_NAME for the template to access `std.extVar(\"github_repo_name\")` and `std.extVar(\"github_repo_owner\")`")
+			}
+		}
+
+		json, err := vm.EvaluateAnonymousSnippet(path, string(file))
+		if err != nil {
+			return nil, err
+		}
+
+		file = []byte(json)
+	}
+
+	return file, nil
 }
