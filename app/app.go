@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -105,7 +106,21 @@ func (a *App) Export(format, dir, kanvasContainerImage string) error {
 	return e.Export(format, dir, kanvasContainerImage)
 }
 
-func (a *App) Render(dir string) error {
+// RenderConfig contains the configuration for rendering the kanvas.yaml file
+type RenderConfig struct {
+	// Push is a flag to push the rendered kanvasa.yaml to the git repository
+	// If true, the rendered kanvas.yaml is pushed to the `origin` remote repository.
+	// In case you want to push to a different branch than the current branch,
+	// you must run `git checkout -b <branch>` before running `kanvas render`.
+	Push bool
+}
+
+type RenderOption func(*RenderConfig)
+
+// Render renders the kanvas.template.jsonnet to kanvas.yaml under the specified
+// directory.
+// If dir is empty, the rendered file is written to the current directory.
+func (a *App) Render(dir string, opts ...RenderOption) error {
 	path := filepath.Base(a.Config.Path)
 
 	const ext = ".template.jsonnet"
@@ -123,6 +138,41 @@ func (a *App) Render(dir string) error {
 
 	if err := os.WriteFile(path, yamlData, 0644); err != nil {
 		return fmt.Errorf("unable to write to %s: %w", path, err)
+	}
+
+	var cfg RenderConfig
+	for _, o := range opts {
+		o(&cfg)
+	}
+
+	if cfg.Push {
+		gitAdd := fmt.Sprintf("git add %s", path)
+		gitCommit := fmt.Sprintf("git commit -m 'Render %s'", path)
+		gitPush := "git push origin HEAD"
+
+		if err := a.runCommands(gitAdd, gitCommit, gitPush); err != nil {
+			return err
+		}
+
+		fmt.Printf("Rendered %s and pushed to the git repository\n", path)
+	} else {
+		fmt.Printf("Rendered %s\n", path)
+	}
+
+	return nil
+}
+
+func (a *App) runCommands(commands ...string) error {
+	for _, c := range commands {
+		fmt.Printf("⌛️ Running command: %s\n", c)
+
+		bashCmd := exec.Command("bash", "-c", c)
+		bashCmd.Stdout = os.Stdout
+		bashCmd.Stderr = os.Stderr
+
+		if err := bashCmd.Run(); err != nil {
+			return fmt.Errorf("unable to run command %q: %w", c, err)
+		}
 	}
 
 	return nil
