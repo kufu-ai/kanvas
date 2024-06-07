@@ -232,10 +232,10 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			dockerBuildXCheckAvailability,
 		)
 
-		if c.Docker.PushToKind != nil {
+		if c.Docker.Kind != nil {
 			args := []interface{}{"load", "docker-image"}
-			if c.Docker.PushToKind.ClusterName != "" {
-				args = append(args, "--name", c.Docker.PushToKind.ClusterName)
+			if c.Docker.Kind.ClusterName != "" {
+				args = append(args, "--name", c.Docker.Kind.ClusterName)
 			}
 			args = append(args, image)
 			kindLoadImageCmd := cmd.New(
