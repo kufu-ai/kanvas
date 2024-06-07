@@ -3,7 +3,6 @@ package kanvas
 import (
 	"fmt"
 	"os"
-	"strings"
 )
 
 const (
@@ -14,10 +13,14 @@ const (
 )
 
 // DiscoverConfigFile returns the path to the config file to use.
-// If the config file is not specified, it will try to find the config file in the current directory.
-// The config file can be either a kanvas.yaml or kanvas.jsonnet file.
 //
-// If both the yaml and jsonnet config files exist, it will return an error.
+// If the config file is not specified, it will try to find the follwoing files in the current directory,
+// and return the first one found:
+//
+// - kanvas.yaml
+// - kanvas.jsonnet
+// - kanvas.template.jsonnet
+//
 // If the config file is not specified and no config file is found, it will return an error.
 func DiscoverConfigFile(opts Options) (string, error) {
 	if opts.ConfigFile != "" {
@@ -40,9 +43,7 @@ func DiscoverConfigFile(opts Options) (string, error) {
 		found = append(found, DefaultConfigFileTemplateJsonnet)
 	}
 
-	if len(found) > 1 {
-		return "", fmt.Errorf("%d config files %s found. Please specify the config file with --config-file", len(found), strings.Join(found, ", "))
-	} else if len(found) == 0 {
+	if len(found) == 0 {
 		return "", fmt.Errorf("unable to find config file")
 	}
 
