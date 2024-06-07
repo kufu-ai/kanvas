@@ -170,6 +170,9 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			"docker",
 			cmd.Args(concat(buildArgs, []interface{}{"--push", "--platform", "linux/amd64", "-t", image, "-f", dockerfile, "."})...),
 		)
+
+		var diff, apply []Step
+
 		dockerBuildXCheckAvailability := Step(Task{
 			OutputFunc: func(r *Runtime, o map[string]string) error {
 				if err := r.Exec(dir, []string{"docker", "buildx", "inspect"}); err != nil {
@@ -218,16 +221,52 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 				dockerBuild,
 			},
 		})
-		return &Driver{
-			Diff: Seq(
-				dockerBuildXCheckAvailability,
+
+		diff = append(diff,
+			dockerBuildXCheckAvailability,
+			dockerBuildXBuildLoadIfAvailable,
+			dockerBuildIfBuildxNotAvailable,
+		)
+
+		apply = append(apply,
+			dockerBuildXCheckAvailability,
+		)
+
+		if c.Docker.PushToKind != nil {
+			args := []interface{}{"load", "docker-image"}
+			if c.Docker.PushToKind.ClusterName != "" {
+				args = append(args, "--name", c.Docker.PushToKind.ClusterName)
+			}
+			args = append(args, image)
+			kindLoadImageCmd := cmd.New(
+				"kind-load-image",
+				"kind",
+				cmd.Args(args...),
+			)
+			kindLoadImage := Step(Task{
+				Run: []kargo.Cmd{
+					kindLoadImageCmd,
+				},
+			})
+
+			apply = append(apply,
 				dockerBuildXBuildLoadIfAvailable,
 				dockerBuildIfBuildxNotAvailable,
-			),
-			Apply: Seq(
-				dockerBuildXCheckAvailability,
+				kindLoadImage,
+			)
+		} else {
+			apply = append(apply,
 				dockerBuildXPushIfAvailable,
 				dockerBuildAndPushIfBuildxNotAvailable,
+			)
+		}
+
+		return &Driver{
+			Diff: Seq(
+				diff...,
+			),
+			Apply: Seq(
+				apply...,
 			),
 			Output: output,
 			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {

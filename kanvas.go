@@ -76,6 +76,18 @@ type Docker struct {
 	ArgsFrom map[string]string `yaml:"argsFrom"`
 	// TagsFrom is a list of tags to be added to the image, derived from the outputs of other components
 	TagsFrom []string `yaml:"tagsFrom"`
+	// PushToKind configures kanvas's behavior when pushing the image to a local kind cluster
+	// An non-nil value means that the image will be pushed to a local kind cluster.
+	// We don't auto-determine the necessity of pushing to kind, so you need to set this explicitly.
+	// This is to give you freedom to push to a remote registry even when you are using kind.
+	PushToKind *Kind `yaml:"pushToKind,omitempty"`
+}
+
+// Kind contains settings for pushing the image to a local kind cluster
+type Kind struct {
+	// ClusterName is the name of the kind cluster
+	// If empty, this defaults to "kind"
+	ClusterName string `yaml:"clusterName"`
 }
 
 // Terraform is a terraform-specific configuration
