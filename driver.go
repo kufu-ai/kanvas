@@ -17,13 +17,14 @@ import (
 	"github.com/mumoshu/kargo/tools"
 )
 
-type Step Task
-type Steps []Step
-
 type Task struct {
 	IfOutputEq IfOutputEq
 	Run        []kargo.Cmd
 	OutputFunc func(*Runtime, map[string]string) error
+
+	// Func is the func called instead of Run.
+	// If Func is set, Run and OutputFunc are ignored.
+	Func func(*WorkflowJob, map[string]string) error
 }
 
 type IfOutputEq struct {
@@ -32,8 +33,8 @@ type IfOutputEq struct {
 }
 
 type Driver struct {
-	Diff       Steps
-	Apply      Steps
+	Diff       []Task
+	Apply      []Task
 	Output     func(format string) []string
 	OutputFunc func(*Runtime, Op, map[string]string) error
 }
@@ -90,8 +91,8 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 
 	if c.AWS != nil {
 		return &Driver{
-			Diff:   Seq(),
-			Apply:  Seq(),
+			Diff:   nil,
+			Apply:  nil,
 			Output: output,
 			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
 				// Get a get-caller-identity result and compare
@@ -171,9 +172,9 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			cmd.Args(concat(buildArgs, []interface{}{"--push", "--platform", "linux/amd64", "-t", image, "-f", dockerfile, "."})...),
 		)
 
-		var diff, apply []Step
+		var diff, apply []Task
 
-		dockerBuildXCheckAvailability := Step(Task{
+		dockerBuildXCheckAvailability := Task{
 			OutputFunc: func(r *Runtime, o map[string]string) error {
 				if err := r.Exec(dir, []string{"docker", "buildx", "inspect"}); err != nil {
 					o["kanvas.buildx"] = "false"
@@ -182,9 +183,9 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 				}
 				return nil
 			},
-		})
+		}
 
-		dockerBuildXPushIfAvailable := Step(Task{
+		dockerBuildXPushIfAvailable := Task{
 			IfOutputEq: IfOutputEq{
 				Key:   "kanvas.buildx",
 				Value: "true",
@@ -192,8 +193,8 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			Run: []kargo.Cmd{
 				dockerBuildxPush,
 			},
-		})
-		dockerBuildAndPushIfBuildxNotAvailable := Step(Task{
+		}
+		dockerBuildAndPushIfBuildxNotAvailable := Task{
 			IfOutputEq: IfOutputEq{
 				Key:   "kanvas.buildx",
 				Value: "false",
@@ -202,8 +203,8 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 				dockerBuild,
 				dockerPush,
 			},
-		})
-		dockerBuildXBuildLoadIfAvailable := Step(Task{
+		}
+		dockerBuildXBuildLoadIfAvailable := Task{
 			IfOutputEq: IfOutputEq{
 				Key:   "kanvas.buildx",
 				Value: "true",
@@ -211,8 +212,8 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			Run: []kargo.Cmd{
 				dockerBuildxLoad,
 			},
-		})
-		dockerBuildIfBuildxNotAvailable := Step(Task{
+		}
+		dockerBuildIfBuildxNotAvailable := Task{
 			IfOutputEq: IfOutputEq{
 				Key:   "kanvas.buildx",
 				Value: "false",
@@ -220,7 +221,7 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 			Run: []kargo.Cmd{
 				dockerBuild,
 			},
-		})
+		}
 
 		diff = append(diff,
 			dockerBuildXCheckAvailability,
@@ -243,11 +244,11 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 				"kind",
 				cmd.Args(args...),
 			)
-			kindLoadImage := Step(Task{
+			kindLoadImage := Task{
 				Run: []kargo.Cmd{
 					kindLoadImageCmd,
 				},
-			})
+			}
 
 			apply = append(apply,
 				dockerBuildXBuildLoadIfAvailable,
@@ -262,12 +263,8 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 		}
 
 		return &Driver{
-			Diff: Seq(
-				diff...,
-			),
-			Apply: Seq(
-				apply...,
-			),
+			Diff:   diff,
+			Apply:  apply,
 			Output: output,
 			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
 				var buf bytes.Buffer
@@ -304,14 +301,14 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 		applyArgs = append(applyArgs, "-auto-approve")
 
 		return &Driver{
-			Diff: Seq(
+			Diff: []Task{
 				Cmd("terraform-init", "terraform", cmd.Args("init"), cmd.Dir(dir)),
 				Cmd("terraform-plan", "terraform", cmd.Args("plan", args, dynArgs), cmd.Dir(dir)),
-			),
-			Apply: Seq(
+			},
+			Apply: []Task{
 				Cmd("terraform-init", "terraform", cmd.Args("init"), cmd.Dir(dir)),
 				Cmd("terraform-apply", "terraform", cmd.Args("apply", applyArgs, dynArgs), cmd.Dir(dir)),
-			),
+			},
 			Output: output,
 			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
 				var buf bytes.Buffer
@@ -476,8 +473,8 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 		}, nil
 	} else if c.Externals != nil {
 		return &Driver{
-			Diff:   Seq(),
-			Apply:  Seq(),
+			Diff:   nil,
+			Apply:  nil,
 			Output: output,
 			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
 				rt, err := vals.New(vals.Options{CacheSize: 512})
@@ -502,10 +499,12 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 				return nil
 			},
 		}, nil
+	} else if c.GitHubFiles != nil {
+		return newGitHubFilesDriver(c.GitHubFiles)
 	} else if c.Noop != nil {
 		return &Driver{
-			Diff:   Seq(),
-			Apply:  Seq(),
+			Diff:   nil,
+			Apply:  nil,
 			Output: output,
 			OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
 				return nil
@@ -517,8 +516,8 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 		return nil, fmt.Errorf("missing driver and components")
 	}
 	return &Driver{
-		Diff:   Seq(),
-		Apply:  Seq(),
+		Diff:   nil,
+		Apply:  nil,
 		Output: output,
 		OutputFunc: func(r *Runtime, op Op, o map[string]string) error {
 			return nil
@@ -526,7 +525,7 @@ func newDriver(id, dir string, c Component, opts Options) (*Driver, error) {
 	}, nil
 }
 
-func Cmd(id, name string, opts ...cmd.Option) Step {
+func Cmd(id, name string, opts ...cmd.Option) Task {
 	c := cmd.New(id, name, opts...)
 
 	return cmdToStep(c)
@@ -538,18 +537,14 @@ func cmdToTask(cmd kargo.Cmd) Task {
 	}
 }
 
-func cmdToStep(cmd kargo.Cmd) Step {
-	return Step(cmdToTask(cmd))
+func cmdToStep(cmd kargo.Cmd) Task {
+	return cmdToTask(cmd)
 }
 
-func cmdsToSeq(cmds []kargo.Cmd) Steps {
-	var steps []Step
+func cmdsToSeq(cmds []kargo.Cmd) []Task {
+	var steps []Task
 	for _, cmd := range cmds {
 		steps = append(steps, cmdToStep(cmd))
 	}
-	return Seq(steps...)
-}
-
-func Seq(c ...Step) Steps {
-	return c
+	return steps
 }

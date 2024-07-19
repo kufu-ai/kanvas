@@ -104,7 +104,7 @@ func (p *Interpreter) parallel(names []string, f func(job *WorkflowJob) error) e
 	return nil
 }
 
-func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, op kanvas.Op, steps []kanvas.Step) error {
+func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, op kanvas.Op, steps []kanvas.Task) error {
 	outputs := map[string]string{}
 	for _, step := range steps {
 		if step.IfOutputEq.Key != "" {
@@ -113,15 +113,21 @@ func (p *Interpreter) runWithExtraArgs(j *WorkflowJob, op kanvas.Op, steps []kan
 			}
 		}
 
-		for _, c := range step.Run {
-			if err := p.runCmd(j, c); err != nil {
-				return fmt.Errorf("command %s: %w", c, err)
-			}
-		}
-
-		if step.OutputFunc != nil {
-			if err := step.OutputFunc(p.runtime, outputs); err != nil {
+		if step.Func != nil {
+			if err := step.Func(j, outputs); err != nil {
 				return err
+			}
+		} else {
+			for _, c := range step.Run {
+				if err := p.runCmd(j, c); err != nil {
+					return fmt.Errorf("command %s: %w", c, err)
+				}
+			}
+
+			if step.OutputFunc != nil {
+				if err := step.OutputFunc(p.runtime, outputs); err != nil {
+					return err
+				}
 			}
 		}
 	}

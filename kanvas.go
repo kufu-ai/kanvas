@@ -40,6 +40,9 @@ type Component struct {
 	Environments map[string]Environment `yaml:"environments,omitempty"`
 	// Externals exposes external parameters and secrets as the component's outputs
 	Externals *Externals `yaml:"externals,omitempty"`
+	// GitHubFiles is the configuration for the github-files driver
+	GitHubFiles *GitHubFiles `yaml:"githubFiles,omitempty"`
+
 	// Noop is a noop configuration that does nothing
 	// This is mainly for template components that are only used as dependencies.
 	// You override or replaces this with a real component in the environment.
@@ -150,12 +153,13 @@ func RenderOrReadFile(path string) ([]byte, error) {
 		if strings.Contains(filepath.Base(path), ".template.") {
 			vm.ExtVar("template", "true")
 
-			if v := os.Getenv("GITHUB_REPOSITORY"); v != "" {
-				splits := strings.Split(v, "/")
-				vm.ExtVar("github_repo_owner", splits[0])
-				vm.ExtVar("github_repo_name", splits[1])
-			} else {
+			vars := getJsonnetVars()
+			if len(vars) == 0 {
 				return nil, errors.New(".template.jsonnet requires GITHUB_REPOSITORY to be set to OWNER/REPO_NAME for the template to access `std.extVar(\"github_repo_name\")` and `std.extVar(\"github_repo_owner\")`")
+			} else {
+				for k, v := range vars {
+					vm.ExtVar(k, v)
+				}
 			}
 		}
 
